@@ -8,11 +8,17 @@ try
     File file = new File( basedir, "build.log" );
     String buf = FileUtils.fileRead( file );
 
-    Pattern p = Pattern.compile( "SUCCESS" );
-    Matcher m = p.matcher( buf.toString() );
-    if ( !m.find() )
-    {
-        System.out.println( "test failed" );
+    Pattern stubPattern = Pattern.compile("stubbed put");
+    Matcher stubMatcher = stubPattern.matcher( buf );
+    if ( !stubMatcher.find() ) {
+        System.out.println( "failed to call deployer stub" );
+        return false;
+    }
+
+    Pattern successPattern = Pattern.compile( "BUILD SUCCESS" );
+    Matcher successMatcher = successPattern.matcher( buf );
+    if ( !successMatcher.find() ) {
+        System.out.println( "build failed" );
         return false;
     }
 }

@@ -19,6 +19,16 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.5.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+
+            <plugin>
                 <groupId>com.github.lkq</groupId>
                 <artifactId>deploy-deps-maven-plugin</artifactId>
                 <version>0.1.0-SNAPSHOT</version>
@@ -34,6 +44,10 @@
                     <targetPath>/home/ec2-user/repository</targetPath>
                     <deployerConfig>
                         <className>com.github.lkq.maven.plugin.deploydeps.DeployerStub</className>
+                        <constructorArgs>
+                            <arg>user</arg>
+                            <arg>host</arg>
+                        </constructorArgs>
                     </deployerConfig>
                 </configuration>
             </plugin>

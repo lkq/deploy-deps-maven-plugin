@@ -1,4 +1,4 @@
-package com.github.lkq.maven.plugin.deploydeps;
+package com.github.lkq.maven.plugin.deploydeps.deployer;
 
 import java.io.IOException;
 

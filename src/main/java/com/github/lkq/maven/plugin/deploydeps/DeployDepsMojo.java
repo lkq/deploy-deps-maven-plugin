@@ -1,5 +1,7 @@
 package com.github.lkq.maven.plugin.deploydeps;
 
+import com.github.lkq.maven.plugin.deploydeps.deployer.Deployer;
+import com.github.lkq.maven.plugin.deploydeps.deployer.DeployerFactory;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
@@ -18,13 +20,16 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.List;
 
-@Mojo(name = "deploy-deps")
+@Mojo(name = "deploy-deps", requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class DeployDepsMojo extends AbstractMojo {
 
     private final Log logger = getLog();
@@ -38,13 +43,13 @@ public class DeployDepsMojo extends AbstractMojo {
     @Component
     private ArtifactFactory artifactFactory;
 
-    @Parameter( defaultValue = "${localRepository}", readonly = true )
+    @Parameter(defaultValue = "${localRepository}", readonly = true)
     protected ArtifactRepository localRepository;
 
-    @Parameter( defaultValue = "${project.remoteArtifactRepositories}", readonly = true )
+    @Parameter(defaultValue = "${project.remoteArtifactRepositories}", readonly = true)
     protected List remoteArtifactRepositories;
 
-    @Parameter( defaultValue = "${project}", required = true, readonly = true )
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
     @Component
@@ -62,6 +67,8 @@ public class DeployDepsMojo extends AbstractMojo {
         logger.info("artifactResolver: " + artifactResolver);
 
         logger.info("deployerConfig:  " + deployerConfig);
+
+        setupProjectClassLoader();
 
         Deployer deployer = deployerFactory.create(deployerConfig);
 
@@ -94,7 +101,7 @@ public class DeployDepsMojo extends AbstractMojo {
                         }
                         String artifactPath = localRepository.pathOf(artifact);
                         String localPath = localRepository.getBasedir() + File.separator + artifactPath;
-                        String remotePath = targetPath  + "/" + artifactPath.substring(0, artifactPath.lastIndexOf('/')) + "/";
+                        String remotePath = targetPath + "/" + artifactPath.substring(0, artifactPath.lastIndexOf('/')) + "/";
                         logger.info("local path:" + localPath);
                         logger.info("remote path:" + remotePath);
                         try {
@@ -113,6 +120,18 @@ public class DeployDepsMojo extends AbstractMojo {
         }
 
 
+    }
+
+    private void setupProjectClassLoader() throws MojoExecutionException {
+        try {
+            String projectClassPath = project.getBuild().getOutputDirectory();
+            URL url = new File(projectClassPath).toURI().toURL();
+
+            URLClassLoader classLoader = new URLClassLoader(new URL[]{url}, getClass().getClassLoader());
+            Thread.currentThread().setContextClassLoader(classLoader);
+        } catch (Exception e) {
+            throw new MojoExecutionException("Couldn't create a classloader.", e);
+        }
     }
 
 }

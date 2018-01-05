@@ -1,4 +1,4 @@
-package com.github.lkq.maven.plugin.deploydeps;
+package com.github.lkq.maven.plugin.deploydeps.deployer;
 
 import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.SCPClient;
@@ -20,7 +20,7 @@ public class SSHDeployer implements Deployer {
         if (connected) {
             client = conn.createSCPClient();
         } else {
-            throw new IOException("Authentication failed.");
+            throw new RuntimeException("Authentication failed.");
         }
     }
 
