@@ -20,7 +20,7 @@ public class SSHDeployer implements Deployer {
         if (connected) {
             client = conn.createSCPClient();
         } else {
-            throw new RuntimeException("Authentication failed.");
+            throw new RuntimeException("ssh connection authentication failed.");
         }
     }
 
@@ -35,7 +35,7 @@ public class SSHDeployer implements Deployer {
         try {
             session = conn.openSession();
             session.execCommand("mkdir -p " + path);
-            String result = IOUtils.toString(session.getStderr());
+            String result = IOUtils.toString(session.getStderr(), "UTF-8");
             if (result == null || "".equals(result.trim())) {
                 return true;
             } else {

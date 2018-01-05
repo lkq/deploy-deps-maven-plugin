@@ -31,7 +31,7 @@ public class DeployerFactoryTest {
     public void canCreateCustomDeployer() throws Exception {
         given(config.getClassName()).willReturn(DummyDeployer.class.getName());
         given(config.getConstructorArgs()).willReturn(new String[]{"user", "host"});
-        Deployer deployer = factory.create(config);
+        Deployer deployer = factory.create(config, "target");
 
         assertTrue(deployer instanceof Proxy);
 

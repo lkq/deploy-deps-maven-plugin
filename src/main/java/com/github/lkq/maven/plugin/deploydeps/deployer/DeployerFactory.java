@@ -2,34 +2,44 @@ package com.github.lkq.maven.plugin.deploydeps.deployer;
 
 import com.github.lkq.maven.plugin.deploydeps.DeployerConfig;
 import org.apache.commons.io.FileUtils;
+import org.apache.maven.plugin.MojoExecutionException;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
+import java.net.URL;
+import java.net.URLClassLoader;
 
 public class DeployerFactory {
-    public Deployer create(DeployerConfig config) {
-        try {
-            String className = config.getClassName();
-            if (className == null || "".equals(className.trim())) {
-                return createDefault(config);
-            } else {
-                return createProxy(config);
 
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("failed to create deployer", e);
+    public Deployer create(DeployerConfig config, String projectTargetDirectory) throws MojoExecutionException {
+        String className = config.getClassName();
+        if (className == null || "".equals(className.trim())) {
+            return createSSHDeployer(config);
+        } else {
+            return createCustomDeployer(config, projectTargetDirectory);
         }
     }
 
-    private Deployer createProxy(DeployerConfig config) {
+    private Deployer createSSHDeployer(DeployerConfig config) throws MojoExecutionException {
+        try {
+            String password = "";
+            if (config.getPasswordFile() != null && !"".equals(config.getPasswordFile().trim())) {
+                password = FileUtils.readFileToString(new File(config.getPasswordFile()), "UTF-8");
+            }
+            // TODO: allow passing port number from config
+            return new SSHDeployer(config.getHost(), 22, config.getUser(), config.getKeyFile(), password);
+        } catch (Exception e) {
+            throw new MojoExecutionException("failed to create ssh deployer", e);
+        }
+    }
+
+    private Deployer createCustomDeployer(DeployerConfig config, String projectTargetDirectory) throws MojoExecutionException {
         Object target;
         try {
+            setupProjectCustomClassLoader(projectTargetDirectory);
             Class<?> clz = Thread.currentThread().getContextClassLoader().loadClass(config.getClassName());
-//            Class<?> clz = Class.forName(config.getClassName());
             String[] args = config.getConstructorArgs();
             if (args != null && args.length > 0) {
 
@@ -43,20 +53,28 @@ public class DeployerFactory {
             } else {
                 target = clz.newInstance();
             }
-        } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException | ClassNotFoundException e) {
-            throw new RuntimeException("failed to create deployer", e);
+        } catch (Exception e) {
+            throw new MojoExecutionException("failed to create custom deployer", e);
         }
 
         InvocationHandler handler = new ProxyDeployerHandler(target);
         return (Deployer) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{Deployer.class}, handler);
     }
 
-    private Deployer createDefault(DeployerConfig config) throws IOException {
-        String password = "";
-        if (config.getPasswordFile() != null && !"".equals(config.getPasswordFile().trim())) {
-            password = FileUtils.readFileToString(new File(config.getPasswordFile()), "UTF-8");
+    /**
+     * Setup class loader which can load the classes from the target project output folder
+     *
+     * @param projectOutputDirectory
+     * @throws MojoExecutionException
+     */
+    private void setupProjectCustomClassLoader(String projectOutputDirectory) throws MojoExecutionException {
+        try {
+            URL url = new File(projectOutputDirectory).toURI().toURL();
+
+            URLClassLoader classLoader = new URLClassLoader(new URL[]{url}, getClass().getClassLoader());
+            Thread.currentThread().setContextClassLoader(classLoader);
+        } catch (Exception e) {
+            throw new MojoExecutionException("failed to create classloader for custom deployer", e);
         }
-        // TODO: allow passing port number from config
-        return new SSHDeployer(config.getHost(), 22, config.getUser(), config.getKeyFile(), password);
     }
 }

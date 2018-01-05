@@ -25,8 +25,6 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.List;
 
 @Mojo(name = "deploy-deps", requiresDependencyResolution = ResolutionScope.RUNTIME)
@@ -37,25 +35,27 @@ public class DeployDepsMojo extends AbstractMojo {
 
     @Parameter
     private DeployerConfig deployerConfig;
+
     @Parameter
     private String targetPath;
 
-    @Component
-    private ArtifactFactory artifactFactory;
 
     @Parameter(defaultValue = "${localRepository}", readonly = true)
-    protected ArtifactRepository localRepository;
+    private ArtifactRepository localRepository;
 
     @Parameter(defaultValue = "${project.remoteArtifactRepositories}", readonly = true)
-    protected List remoteArtifactRepositories;
+    private List remoteArtifactRepositories;
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
+
     @Component
-    protected ArtifactMetadataSource artifactMetadataSource;
+    private ArtifactFactory artifactFactory;
     @Component
-    protected ArtifactResolver artifactResolver;
+    private ArtifactMetadataSource artifactMetadataSource;
+    @Component
+    private ArtifactResolver artifactResolver;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
 
@@ -68,9 +68,7 @@ public class DeployDepsMojo extends AbstractMojo {
 
         logger.info("deployerConfig:  " + deployerConfig);
 
-        setupProjectClassLoader();
-
-        Deployer deployer = deployerFactory.create(deployerConfig);
+        Deployer deployer = deployerFactory.create(deployerConfig, project.getBuild().getOutputDirectory());
 
         List<Dependency> dependencies = project.getDependencies();
         for (Dependency dependency : dependencies) {
@@ -120,18 +118,6 @@ public class DeployDepsMojo extends AbstractMojo {
         }
 
 
-    }
-
-    private void setupProjectClassLoader() throws MojoExecutionException {
-        try {
-            String projectClassPath = project.getBuild().getOutputDirectory();
-            URL url = new File(projectClassPath).toURI().toURL();
-
-            URLClassLoader classLoader = new URLClassLoader(new URL[]{url}, getClass().getClassLoader());
-            Thread.currentThread().setContextClassLoader(classLoader);
-        } catch (Exception e) {
-            throw new MojoExecutionException("Couldn't create a classloader.", e);
-        }
     }
 
 }
