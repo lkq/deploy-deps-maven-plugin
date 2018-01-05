@@ -6,6 +6,6 @@ public class DeployerStub {
     }
 
     public void put(String localFile, String remotePath, String mode) {
-        System.out.println("stubbed put, from " + localFile + " to " + remotePath + " mode:" + mode);
+        System.out.println("stubbed put, from [" + localFile + "] to [" + remotePath + "], mode:" + mode);
     }
 }

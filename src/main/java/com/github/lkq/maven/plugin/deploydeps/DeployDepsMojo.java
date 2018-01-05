@@ -39,6 +39,9 @@ public class DeployDepsMojo extends AbstractMojo {
     @Parameter
     private String targetPath;
 
+    @Parameter
+    private boolean dryRun;
+
 
     @Parameter(defaultValue = "${localRepository}", readonly = true)
     private ArtifactRepository localRepository;
@@ -68,7 +71,13 @@ public class DeployDepsMojo extends AbstractMojo {
 
         logger.info("deployerConfig:  " + deployerConfig);
 
-        Deployer deployer = deployerFactory.create(deployerConfig, project.getBuild().getOutputDirectory());
+        Deployer deployer = null;
+        if (dryRun) {
+            // requires maven-plugin-plugin:3.5, otherwise can not use lambda
+            deployer = (localFile, remotePath, mode) -> logger.info("dry run, not putting, from [" + localFile + "] to [" + remotePath + "], mode=" + mode);
+        } else {
+            deployer = deployerFactory.create(deployerConfig, project.getBuild().getOutputDirectory());
+        }
 
         List<Dependency> dependencies = project.getDependencies();
         for (Dependency dependency : dependencies) {
