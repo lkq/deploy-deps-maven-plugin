@@ -4,7 +4,7 @@
 
     <groupId>com.github.lkq</groupId>
     <artifactId>deploy-deps-maven-plugin</artifactId>
-    <version>0.1.4-SNAPSHOT</version>
+    <version>0.1.4</version>
     <packaging>maven-plugin</packaging>
 
     <name>Deploy Dependencies Maven Plugin</name>
@@ -16,7 +16,8 @@
     <scm>
         <connection>scm:git:https://github.com/lkq/deploy-deps-maven-plugin.git</connection>
         <url>https://github.com/lkq/deploy-deps-maven-plugin</url>
-    </scm>
+      <tag>deploy-deps-maven-plugin-0.1.4</tag>
+  </scm>
 
     <ciManagement>
         <system>travis-ci</system>
