@@ -42,6 +42,9 @@ public class DeployDepsMojo extends AbstractMojo {
     @Parameter
     private boolean dryRun;
 
+    @Parameter(defaultValue = "0640")
+    private String fileMode;
+
 
     @Parameter(defaultValue = "${localRepository}", readonly = true)
     private ArtifactRepository localRepository;
@@ -113,13 +116,12 @@ public class DeployDepsMojo extends AbstractMojo {
                         logger.info("remote path:" + remotePath);
                         try {
                             logger.info("copying from " + localPath + " to " + remotePath);
-                            deployer.put(localPath, remotePath, "0640");
+                            deployer.put(localPath, remotePath, fileMode);
                         } catch (IOException e) {
                             logger.error("failed to transfer file", e);
                         }
                     }
                 }
-
 
             } catch (Exception e) {
                 logger.error("failed to deploy dependencies", e);
