@@ -174,7 +174,7 @@
                     <autoVersionSubmodules>true</autoVersionSubmodules>
                     <useReleaseProfile>false</useReleaseProfile>
                     <!--activate release profile-->
-                    <releaseProfiles>run-its release</releaseProfiles>
+                    <releaseProfiles>run-its release gpg</releaseProfiles>
                     <goals>deploy</goals>
                 </configuration>
             </plugin>
