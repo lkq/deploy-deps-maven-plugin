@@ -1,5 +1,7 @@
 # Deploy Dependencies Maven Plugin
 
+[![Build Status](https://travis-ci.org/lkq/deploy-deps-maven-plugin.svg?branch=master)](https://travis-ci.org/lkq/deploy-deps-maven-plugin)
+
 If you want to deploy your artifacts to remote hosts, there are already a bunch of solutions, e.g:
 - wagon-maven-plugin
 - rsync
@@ -9,11 +11,11 @@ If you want to deploy your artifacts to remote hosts, there are already a bunch 
 1. I'm running a private sonatype OSS instance, and want to use it as golden source
 2. I want to deploy artifacts from my OSS repository to aws
 
-#### wagon
+#### why not wagon
 -- it need to config per project\
 -- it is part of the release build, this will be a problem as I'm in a network with restricted access to the outside world
 
-#### rsync
+#### why not rsync
 -- have to pull the individual artifact together by myself
 
 #### why maven plugin
