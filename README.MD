@@ -17,9 +17,57 @@ If you want to deploy your artifacts to remote hosts, there are already a bunch 
 -- have to pull the individual artifact together by myself
 
 #### why maven plugin
--- the dependencies list is a good place for configuring the artifacts to deploy\
+-- the dependencies list is feasible for configuring the artifacts to deploy\
 -- maven already know how to pull the latest artifacts from remote repository\
 -- can be run in CI/CD, e.g Jenkins\
 
 
-you only have to create a dedicated maven project to host the pom.xml with the dependency list and the plugin config
+## How to Use
+
+
+create a pom.xml file as below, with the artifacts you want to deploy in the \<dependencies\> tag
+```
+<dependencies>
+    <dependency>
+        <groupId>your group id</groupId>
+        <artifactId>your artifact id</artifactId>
+        <version>version spec, e.g [0.1.0,)</version>
+    </dependency>
+</dependencies>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>com.github.lkq</groupId>
+            <artifactId>deploy-deps-maven-plugin</artifactId>
+            <version>0.2.0</version>
+            <executions>
+                <execution>
+                    <phase>install</phase>
+                    <goals>
+                        <goal>deploy-deps</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                <targetPath>/home/ec2-user/repository</targetPath>
+                <fileMode>0640</fileMode>
+                <deployerConfig>
+                    <user>remote user name</user>
+                    <host>remote host</host>
+                    <keyFile>your private key - given you should have setup your public key in the remote host</keyFile>
+                </deployerConfig>
+            </configuration>
+        </plugin>
+</plugins>
+</build>
+```
+
+then run below command under the same path of your pom.xml
+```
+mvn install
+```
+
+### Version Range
+using [version range](http://maven.apache.org/enforcer/enforcer-rules/versionRanges.html) for dependency version will deploy all versions within the range\
+e.g an open end version range [0.1.0,) can be resolved to all available versions begin from 0.1.0 to the latest one
