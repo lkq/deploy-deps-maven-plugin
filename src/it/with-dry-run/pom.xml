@@ -32,12 +32,14 @@
                 </executions>
                 <configuration>
                     <targetPath>/home/ec2-user/repository</targetPath>
-                    <deployerConfig>
-                        <user>user</user>
-                        <host>host</host>
-                        <keyFile>/some/file</keyFile>
-                        <passwordFile>/some/file</passwordFile>
-                    </deployerConfig>
+                    <deployer>
+                        <ssh>
+                            <user>user</user>
+                            <host>host</host>
+                            <keyFile>/some/file</keyFile>
+                            <passwordFile>/some/file</passwordFile>
+                        </ssh>
+                    </deployer>
                 </configuration>
             </plugin>
         </plugins>

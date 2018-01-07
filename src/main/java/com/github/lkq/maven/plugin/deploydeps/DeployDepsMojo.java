@@ -31,29 +31,25 @@ import java.util.List;
 public class DeployDepsMojo extends AbstractMojo {
 
     private final Log logger = getLog();
+
     private final DeployerFactory deployerFactory = new DeployerFactory();
 
     @Parameter
-    private DeployerConfig deployerConfig;
-
+    private String targetRepository;
     @Parameter
-    private String targetPath;
-
+    private String targetFileMode;
+    @Parameter
+    DeployerConfig deployer;
     @Parameter
     private boolean dryRun;
 
-    @Parameter(defaultValue = "0640")
-    private String fileMode;
-
-
-    @Parameter(defaultValue = "${localRepository}", readonly = true)
-    private ArtifactRepository localRepository;
-
-    @Parameter(defaultValue = "${project.remoteArtifactRepositories}", readonly = true)
-    private List remoteArtifactRepositories;
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
+    @Parameter(defaultValue = "${localRepository}", readonly = true)
+    private ArtifactRepository localRepository;
+    @Parameter(defaultValue = "${project.remoteArtifactRepositories}", readonly = true)
+    private List remoteArtifactRepositories;
 
 
     @Component
@@ -65,21 +61,14 @@ public class DeployDepsMojo extends AbstractMojo {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
 
-        logger.info("project: " + project);
-        logger.info("dependency artifacts: " + project.getDependencyArtifacts());
+        logDebugInfo();
 
-        logger.info("localRepository: " + localRepository);
-        logger.info("remoteArtifactRepositories: " + remoteArtifactRepositories);
-        logger.info("artifactResolver: " + artifactResolver);
-
-        logger.info("deployerConfig:  " + deployerConfig);
-
-        Deployer deployer = null;
+        Deployer artifactDeployer = null;
         if (dryRun) {
             // requires maven-plugin-plugin:3.5, otherwise can not use lambda
-            deployer = (localFile, remotePath, mode) -> logger.info("dry run, not putting, from [" + localFile + "] to [" + remotePath + "], mode=" + mode);
+            artifactDeployer = (localFile, remotePath, mode) -> logger.info("dry run, not putting, from [" + localFile + "] to [" + remotePath + "], targetFileMode=" + mode);
         } else {
-            deployer = deployerFactory.create(deployerConfig, project.getBuild().getOutputDirectory());
+            artifactDeployer = deployerFactory.create(deployer, project.getBuild().getOutputDirectory());
         }
 
         List<Dependency> dependencies = project.getDependencies();
@@ -111,12 +100,12 @@ public class DeployDepsMojo extends AbstractMojo {
                         }
                         String artifactPath = localRepository.pathOf(artifact);
                         String localPath = localRepository.getBasedir() + File.separator + artifactPath;
-                        String remotePath = targetPath + "/" + artifactPath.substring(0, artifactPath.lastIndexOf('/')) + "/";
+                        String remotePath = new File(artifactPath).getPath();
                         logger.info("local path:" + localPath);
                         logger.info("remote path:" + remotePath);
                         try {
                             logger.info("copying from " + localPath + " to " + remotePath);
-                            deployer.put(localPath, remotePath, fileMode);
+                            artifactDeployer.put(localPath, remotePath, targetFileMode);
                         } catch (IOException e) {
                             logger.error("failed to transfer file", e);
                         }
@@ -128,6 +117,21 @@ public class DeployDepsMojo extends AbstractMojo {
             }
         }
 
+
+    }
+
+    private void logDebugInfo() {
+
+        logger.debug("project: " + project);
+        logger.info("localRepository: " + localRepository);
+        logger.info("remoteArtifactRepositories: " + remoteArtifactRepositories);
+
+        logger.info("artifacts to deploy: " + project.getDependencyArtifacts());
+
+        logger.info("target repository:  " + targetRepository);
+        logger.info("target file mode:  " + targetFileMode);
+        logger.info("deployer config:  " + deployer);
+        logger.info("dry run:  " + dryRun);
 
     }
 

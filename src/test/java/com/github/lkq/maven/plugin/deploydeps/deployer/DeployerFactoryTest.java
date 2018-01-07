@@ -4,6 +4,7 @@ import com.github.lkq.maven.plugin.deploydeps.DeployerConfig;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -19,7 +20,7 @@ public class DeployerFactoryTest {
 
     DeployerFactory factory;
 
-    @Mock
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private DeployerConfig config;
 
     @Before
@@ -29,15 +30,18 @@ public class DeployerFactoryTest {
 
     @Test
     public void canCreateCustomDeployer() throws Exception {
-        given(config.getClassName()).willReturn(DummyDeployer.class.getName());
-        given(config.getConstructorArgs()).willReturn(new String[]{"user", "host"});
-        Deployer deployer = factory.create(config, "target");
+        given(config.getSsh()).willReturn(null);
+        given(config.getCustom().getClassName()).willReturn(DummyDeployer.class.getName());
+        given(config.getCustom().getConstructorArgs()).willReturn(new String[]{"user", "host"});
+        CompositeDeployer deployer = (CompositeDeployer) factory.create(config, "target");
 
-        assertTrue(deployer instanceof Proxy);
+        assertThat(deployer.deployerCount(), is(1));
+        Deployer proxyDeployer = deployer.getDeployer(0);
+        assertTrue(proxyDeployer instanceof Proxy);
 
         deployer.put("local", "remote", "640");
 
-        ProxyDeployerHandler handler = (ProxyDeployerHandler) Proxy.getInvocationHandler(deployer);
+        ProxyDeployerHandler handler = (ProxyDeployerHandler) Proxy.getInvocationHandler(proxyDeployer);
         DummyDeployer target = (DummyDeployer) handler.getTarget();
 
         assertThat(target.user, is("user"));

@@ -13,15 +13,15 @@ If you want to deploy your artifacts to remote hosts, there are already a bunch 
 
 #### why not wagon
 -- it need to config per project\
--- it is part of the release build, this will be a problem as I'm in a network with restricted access to the outside world
+-- it is part of the release build, this will be a problem as it may make the release build unstable
 
 #### why not rsync
 -- have to pull the individual artifact together by myself
 
 #### why maven plugin
 -- the dependencies list is feasible for configuring the artifacts to deploy\
--- maven already know how to pull the latest artifacts from remote repository\
--- can be run in CI/CD, e.g Jenkins\
+-- maven already know how to pull the latest artifacts from OSS repository\
+-- can be run in CI server, e.g Jenkins\
 
 
 ## How to Use

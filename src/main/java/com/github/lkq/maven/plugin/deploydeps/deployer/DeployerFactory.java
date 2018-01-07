@@ -14,15 +14,20 @@ import java.net.URLClassLoader;
 public class DeployerFactory {
 
     public Deployer create(DeployerConfig config, String projectTargetDirectory) throws MojoExecutionException {
-        String className = config.getClassName();
-        if (className == null || "".equals(className.trim())) {
-            return createSSHDeployer(config);
-        } else {
-            return createCustomDeployer(config, projectTargetDirectory);
+        CompositeDeployer deployer = new CompositeDeployer();
+        if (config.getSsh() != null) {
+            deployer.with(createSSHDeployer(config.getSsh()));
         }
+        if (config.getCustom() != null) {
+            deployer.with(createCustomDeployer(config.getCustom(), projectTargetDirectory));
+        }
+        if (deployer.deployerCount() <= 0) {
+            throw new RuntimeException("no deployer available");
+        }
+        return deployer;
     }
 
-    private Deployer createSSHDeployer(DeployerConfig config) throws MojoExecutionException {
+    private Deployer createSSHDeployer(DeployerConfig.SSHConfig config) throws MojoExecutionException {
         try {
             String password = "";
             if (config.getPasswordFile() != null && !"".equals(config.getPasswordFile().trim())) {
@@ -35,7 +40,7 @@ public class DeployerFactory {
         }
     }
 
-    private Deployer createCustomDeployer(DeployerConfig config, String projectTargetDirectory) throws MojoExecutionException {
+    private Deployer createCustomDeployer(DeployerConfig.CustomConfig config, String projectTargetDirectory) throws MojoExecutionException {
         Object target;
         try {
             setupProjectCustomClassLoader(projectTargetDirectory);

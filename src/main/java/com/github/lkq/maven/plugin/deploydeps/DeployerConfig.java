@@ -3,47 +3,108 @@ package com.github.lkq.maven.plugin.deploydeps;
 import java.util.Arrays;
 
 public class DeployerConfig {
-    private String className;
-    private String[] constructorArgs;
+    private SSHConfig ssh;
+    private CustomConfig custom;
 
-    private String user;
-    private String keyFile;
-    private String passwordFile;
-    private String host;
-
-    public String getClassName() {
-        return className;
+    public SSHConfig getSsh() {
+        return ssh;
     }
 
-    public String[] getConstructorArgs() {
-        return constructorArgs;
+    public void setSsh(SSHConfig ssh) {
+        this.ssh = ssh;
     }
 
-    public String getUser() {
-        return user;
+    public CustomConfig getCustom() {
+        return custom;
     }
 
-    public String getKeyFile() {
-        return keyFile;
-    }
-
-    public String getPasswordFile() {
-        return passwordFile;
-    }
-
-    public String getHost() {
-        return host;
+    public void setCustom(CustomConfig custom) {
+        this.custom = custom;
     }
 
     @Override
     public String toString() {
         return "DeployerConfig{" +
-                "className='" + className + '\'' +
-                ", constructorArgs=" + Arrays.toString(constructorArgs) +
-                ", user='" + user + '\'' +
-                ", keyFile='" + keyFile + '\'' +
-                ", passwordFile='" + passwordFile + '\'' +
-                ", host='" + host + '\'' +
+                "ssh=" + ssh +
+                ", custom=" + custom +
                 '}';
+    }
+
+    public static class SSHConfig {
+        private String user;
+        private String keyFile;
+        private String passwordFile;
+        private String host;
+
+        public String getUser() {
+            return user;
+        }
+
+        public void setUser(String user) {
+            this.user = user;
+        }
+
+        public String getKeyFile() {
+            return keyFile;
+        }
+
+        public void setKeyFile(String keyFile) {
+            this.keyFile = keyFile;
+        }
+
+        public String getPasswordFile() {
+            return passwordFile;
+        }
+
+        public void setPasswordFile(String passwordFile) {
+            this.passwordFile = passwordFile;
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public void setHost(String host) {
+            this.host = host;
+        }
+
+        @Override
+        public String toString() {
+            return "SSHConfig{" +
+                    "user='" + user + '\'' +
+                    ", keyFile='" + keyFile + '\'' +
+                    ", passwordFile='" + passwordFile + '\'' +
+                    ", host='" + host + '\'' +
+                    '}';
+        }
+    }
+
+    public static class CustomConfig {
+        private String className;
+        private String[] constructorArgs;
+
+        public String getClassName() {
+            return className;
+        }
+
+        public void setClassName(String className) {
+            this.className = className;
+        }
+
+        public String[] getConstructorArgs() {
+            return constructorArgs;
+        }
+
+        public void setConstructorArgs(String[] constructorArgs) {
+            this.constructorArgs = constructorArgs;
+        }
+
+        @Override
+        public String toString() {
+            return "CustomConfig{" +
+                    "className='" + className + '\'' +
+                    ", constructorArgs=" + Arrays.toString(constructorArgs) +
+                    '}';
+        }
     }
 }

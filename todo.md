@@ -6,3 +6,7 @@ use config to allow force overwrite
 ```xml
 <forceOverwrite>true</forceOverwrite>
 ```
+
+
+## allow custom ssh port
+default ssh port is 22, I want to be able to deploy via sshd with custom port

@@ -42,13 +42,15 @@
                 </executions>
                 <configuration>
                     <targetPath>/home/ec2-user/repository</targetPath>
-                    <deployerConfig>
-                        <className>com.github.lkq.maven.plugin.deploydeps.DeployerStub</className>
-                        <constructorArgs>
-                            <arg>user</arg>
-                            <arg>host</arg>
-                        </constructorArgs>
-                    </deployerConfig>
+                    <deployer>
+                        <custom>
+                            <className>com.github.lkq.maven.plugin.deploydeps.DeployerStub</className>
+                            <constructorArgs>
+                                <arg>user</arg>
+                                <arg>host</arg>
+                            </constructorArgs>
+                        </custom>
+                    </deployer>
                 </configuration>
             </plugin>
         </plugins>
