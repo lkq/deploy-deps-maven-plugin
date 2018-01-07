@@ -4,7 +4,7 @@
 
     <groupId>com.github.lkq</groupId>
     <artifactId>deploy-deps-maven-plugin</artifactId>
-    <version>0.2.1-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>Deploy Dependencies Maven Plugin</name>
