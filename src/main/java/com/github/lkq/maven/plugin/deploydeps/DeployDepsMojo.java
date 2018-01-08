@@ -66,7 +66,7 @@ public class DeployDepsMojo extends AbstractMojo {
         Deployer artifactDeployer = null;
         if (dryRun) {
             // requires maven-plugin-plugin:3.5, otherwise can not use lambda
-            artifactDeployer = (localFile, remotePath, mode) -> logger.info("dry run, not putting, from [" + localFile + "] to [" + remotePath + "], targetFileMode=" + mode);
+            artifactDeployer = (localFile, remotePath, mode) -> logger.info("dry run, not putting, from [" + localFile + "] to [" + remotePath + "], mode=" + mode);
         } else {
             artifactDeployer = deployerFactory.create(deployer, project.getBuild().getOutputDirectory());
         }
