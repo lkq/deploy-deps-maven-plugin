@@ -86,6 +86,11 @@
             <artifactId>maven-artifact-manager</artifactId>
             <version>2.2.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.22</version>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>

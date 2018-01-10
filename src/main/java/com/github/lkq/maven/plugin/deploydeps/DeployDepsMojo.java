@@ -16,12 +16,13 @@ import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +31,7 @@ import java.util.List;
 @Mojo(name = "deploy-deps", requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class DeployDepsMojo extends AbstractMojo {
 
-    private final Log logger = getLog();
+    private static Logger logger = LoggerFactory.getLogger(DeployDepsMojo.class);
 
     private final DeployerFactory deployerFactory = new DeployerFactory();
 
@@ -59,6 +60,10 @@ public class DeployDepsMojo extends AbstractMojo {
     @Component
     private ArtifactResolver artifactResolver;
 
+    public DeployDepsMojo() {
+        com.github.lkq.maven.plugin.deploydeps.logging.LoggerFactory.bridge(getLog());
+    }
+
     public void execute() throws MojoExecutionException, MojoFailureException {
 
         logDebugInfo();
@@ -68,7 +73,11 @@ public class DeployDepsMojo extends AbstractMojo {
             // requires maven-plugin-plugin:3.5, otherwise can not use lambda
             artifactDeployer = (localFile, remotePath, mode) -> logger.info("dry run, not putting, from [" + localFile + "] to [" + remotePath + "], mode=" + mode);
         } else {
-            artifactDeployer = deployerFactory.create(deployer, project.getBuild().getOutputDirectory());
+            try {
+                artifactDeployer = deployerFactory.create(deployer, project.getBuild().getOutputDirectory());
+            } catch (IOException e) {
+                throw new MojoExecutionException("failed to create ssh deployer", e);
+            }
         }
 
         List<Dependency> dependencies = project.getDependencies();
@@ -100,7 +109,7 @@ public class DeployDepsMojo extends AbstractMojo {
                         }
                         String artifactPath = localRepository.pathOf(artifact);
                         String localPath = localRepository.getBasedir() + File.separator + artifactPath;
-                        String remotePath = new File(artifactPath).getPath();
+                        String remotePath = targetRepository + "/" + artifactPath.substring(0, artifactPath.lastIndexOf('/'));
                         logger.info("local path:" + localPath);
                         logger.info("remote path:" + remotePath);
                         try {

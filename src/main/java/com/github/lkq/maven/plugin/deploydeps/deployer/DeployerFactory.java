@@ -1,19 +1,23 @@
 package com.github.lkq.maven.plugin.deploydeps.deployer;
 
+import ch.ethz.ssh2.Connection;
 import com.github.lkq.maven.plugin.deploydeps.DeployerConfig;
+import com.github.lkq.maven.plugin.deploydeps.deployer.ssh.SSHClient;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
 public class DeployerFactory {
 
-    public Deployer create(DeployerConfig config, String projectTargetDirectory) throws MojoExecutionException {
+    public Deployer create(DeployerConfig config, String projectTargetDirectory) throws IOException {
         CompositeDeployer deployer = new CompositeDeployer();
         if (config.getSsh() != null) {
             deployer.with(createSSHDeployer(config.getSsh()));
@@ -27,20 +31,23 @@ public class DeployerFactory {
         return deployer;
     }
 
-    private Deployer createSSHDeployer(DeployerConfig.SSHConfig config) throws MojoExecutionException {
-        try {
-            String password = "";
-            if (config.getPasswordFile() != null && !"".equals(config.getPasswordFile().trim())) {
-                password = FileUtils.readFileToString(new File(config.getPasswordFile()), "UTF-8");
-            }
-            // TODO: allow passing port number from config
-            return new SSHDeployer(config.getHost(), 22, config.getUser(), config.getKeyFile(), password);
-        } catch (Exception e) {
-            throw new MojoExecutionException("failed to create ssh deployer", e);
+    private Deployer createSSHDeployer(DeployerConfig.SSHConfig config) throws IOException {
+        String password = "";
+        if (config.getPasswordFile() != null && !"".equals(config.getPasswordFile().trim())) {
+            password = FileUtils.readFileToString(new File(config.getPasswordFile()), "UTF-8");
+        }
+        // TODO: allow passing port number from config
+        Connection connection = new Connection(config.getHost(), 22);
+        connection.connect();
+        boolean connected = connection.authenticateWithPublicKey(config.getUser(), new File(config.getKeyFile()), password);
+        if (connected) {
+            return new SSHDeployer(new SSHClient(connection));
+        } else {
+            throw new RuntimeException("failed to establish connection:" + config);
         }
     }
 
-    private Deployer createCustomDeployer(DeployerConfig.CustomConfig config, String projectTargetDirectory) throws MojoExecutionException {
+    private Deployer createCustomDeployer(DeployerConfig.CustomConfig config, String projectTargetDirectory) {
         Object target;
         try {
             setupProjectCustomClassLoader(projectTargetDirectory);
@@ -59,7 +66,7 @@ public class DeployerFactory {
                 target = clz.newInstance();
             }
         } catch (Exception e) {
-            throw new MojoExecutionException("failed to create custom deployer", e);
+            throw new RuntimeException("failed to create custom deployer", e);
         }
 
         InvocationHandler handler = new ProxyDeployerHandler(target);
@@ -72,14 +79,10 @@ public class DeployerFactory {
      * @param projectOutputDirectory
      * @throws MojoExecutionException
      */
-    private void setupProjectCustomClassLoader(String projectOutputDirectory) throws MojoExecutionException {
-        try {
+    private void setupProjectCustomClassLoader(String projectOutputDirectory) throws MalformedURLException {
             URL url = new File(projectOutputDirectory).toURI().toURL();
 
             URLClassLoader classLoader = new URLClassLoader(new URL[]{url}, getClass().getClassLoader());
             Thread.currentThread().setContextClassLoader(classLoader);
-        } catch (Exception e) {
-            throw new MojoExecutionException("failed to create classloader for custom deployer", e);
-        }
     }
 }
