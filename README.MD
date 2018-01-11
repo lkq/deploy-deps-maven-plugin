@@ -54,11 +54,13 @@ create a pom.xml file as below, with the artifacts you want to deploy in the \<d
             <configuration>
                 <targetPath>/home/ec2-user/repository</targetPath>
                 <fileMode>0640</fileMode>
-                <deployerConfig>
-                    <user>remote user name</user>
-                    <host>remote host</host>
-                    <keyFile>your private key - given you should have setup your public key in the remote host</keyFile>
-                </deployerConfig>
+                <deployer>
+                    <ssh>
+                        <user>remote user name</user>
+                        <host>remote host</host>
+                        <keyFile>your private key - given you should have setup your public key in the remote host</keyFile>
+                    </ssh>
+                </deployer>
             </configuration>
         </plugin>
 </plugins>
@@ -73,3 +75,14 @@ mvn install
 ### Version Range
 using [version range](http://maven.apache.org/enforcer/enforcer-rules/versionRanges.html) for dependency version will deploy all versions within the range\
 e.g an open end version range [0.1.0,) can be resolved to all available versions begin from 0.1.0 to the latest one
+
+
+## Build
+run integration tests
+```
+mvn -Prun-its
+```
+release
+```
+mvn release:clean release:prepare release:perform
+```

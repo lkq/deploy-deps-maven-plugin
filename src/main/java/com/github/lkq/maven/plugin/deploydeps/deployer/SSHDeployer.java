@@ -1,8 +1,8 @@
 package com.github.lkq.maven.plugin.deploydeps.deployer;
 
 import com.github.lkq.maven.plugin.deploydeps.deployer.ssh.SSHClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.github.lkq.maven.plugin.deploydeps.logging.Logger;
+import org.apache.maven.plugin.logging.Log;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.File;
@@ -14,7 +14,7 @@ import java.security.NoSuchAlgorithmException;
 
 public class SSHDeployer implements Deployer {
 
-    private Logger logger = LoggerFactory.getLogger(SSHDeployer.class);
+    private Log logger = Logger.get();
 
     private final SSHClient ssh;
 
@@ -26,12 +26,12 @@ public class SSHDeployer implements Deployer {
         if (mkdir(targetDirectory)) {
             String targetFile = targetDirectory + "/" + new File(localFile).getName();
             String remoteMD5 = remoteMD5(targetFile);
-            logger.info("md5={}, file={}", remoteMD5, targetFile);
+            logger.info("md5="+ remoteMD5 + ", file=" + targetFile);
             if ("".equals(remoteMD5)) {
                 doPut(localFile, targetDirectory, mode);
             } else {
                 String localMD5 = localMD5(localFile);
-                logger.info("md5={}, file={}", localMD5, localFile);
+                logger.info("md5=" + localMD5 + ", file=" + localFile);
                 if (!localMD5.equals(remoteMD5)) {
                     doPut(localFile, targetDirectory, mode);
                 } else {
@@ -73,7 +73,7 @@ public class SSHDeployer implements Deployer {
         if (error == null || "".equals(error.trim())) {
             return true;
         } else {
-            logger.info("failed to create remote dir, error={}, path={}", error, path);
+            logger.info("failed to create remote dir, error=" + error + ", path=" + path);
             return false;
         }
     }

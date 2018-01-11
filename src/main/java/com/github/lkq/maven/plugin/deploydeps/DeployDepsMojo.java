@@ -16,13 +16,12 @@ import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,8 +29,6 @@ import java.util.List;
 
 @Mojo(name = "deploy-deps", requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class DeployDepsMojo extends AbstractMojo {
-
-    private static Logger logger = LoggerFactory.getLogger(DeployDepsMojo.class);
 
     private final DeployerFactory deployerFactory = new DeployerFactory();
 
@@ -60,13 +57,10 @@ public class DeployDepsMojo extends AbstractMojo {
     @Component
     private ArtifactResolver artifactResolver;
 
-    public DeployDepsMojo() {
-        com.github.lkq.maven.plugin.deploydeps.logging.LoggerFactory.bridge(getLog());
-    }
-
     public void execute() throws MojoExecutionException, MojoFailureException {
 
-        logDebugInfo();
+        Log logger = getLog();
+        logInfo(logger);
 
         Deployer artifactDeployer = null;
         if (dryRun) {
@@ -76,7 +70,7 @@ public class DeployDepsMojo extends AbstractMojo {
             try {
                 artifactDeployer = deployerFactory.create(deployer, project.getBuild().getOutputDirectory());
             } catch (IOException e) {
-                throw new MojoExecutionException("failed to create ssh deployer", e);
+                throw new MojoExecutionException("failed to create deployer", e);
             }
         }
 
@@ -89,19 +83,18 @@ public class DeployDepsMojo extends AbstractMojo {
             } catch (InvalidVersionSpecificationException e) {
                 String error = "invalid version spec: " + dependency.getVersion();
                 logger.error(error, e);
-                throw new RuntimeException(error);
+                throw new RuntimeException(error, e);
             }
             Artifact dependencyArtifact = artifactFactory.createDependencyArtifact(dependency.getGroupId(), dependency.getArtifactId(), versionRange, dependency.getType(), dependency.getClassifier(), dependency.getScope());
             try {
                 List<ArtifactVersion> availableVersions = artifactMetadataSource.retrieveAvailableVersions(dependencyArtifact, localRepository, remoteArtifactRepositories);
-                logger.info("available versions for " + dependencyArtifact.getArtifactId() + ": " + availableVersions);
+                logger.info("found available versions for " + dependencyArtifact.getArtifactId() + ": " + availableVersions);
                 for (ArtifactVersion version : availableVersions) {
                     if (versionRange.containsVersion(version)) {
 
                         Artifact artifact = artifactFactory.createArtifactWithClassifier(dependency.getGroupId(), dependency.getArtifactId(), version.toString(), dependency.getType(), dependency.getClassifier());
-                        logger.info("artifact: " + artifact);
                         try {
-                            artifactResolver.resolveAlways(artifact, remoteArtifactRepositories, localRepository);
+                            artifactResolver.resolve(artifact, remoteArtifactRepositories, localRepository);
                         } catch (ArtifactResolutionException e) {
                             logger.info("failed to resolve artifact");
                         } catch (ArtifactNotFoundException e) {
@@ -110,8 +103,6 @@ public class DeployDepsMojo extends AbstractMojo {
                         String artifactPath = localRepository.pathOf(artifact);
                         String localPath = localRepository.getBasedir() + File.separator + artifactPath;
                         String remotePath = targetRepository + "/" + artifactPath.substring(0, artifactPath.lastIndexOf('/'));
-                        logger.info("local path:" + localPath);
-                        logger.info("remote path:" + remotePath);
                         try {
                             logger.info("copying from " + localPath + " to " + remotePath);
                             artifactDeployer.put(localPath, remotePath, targetFileMode);
@@ -129,7 +120,7 @@ public class DeployDepsMojo extends AbstractMojo {
 
     }
 
-    private void logDebugInfo() {
+    private void logInfo(Log logger) {
 
         logger.debug("project: " + project);
         logger.info("localRepository: " + localRepository);

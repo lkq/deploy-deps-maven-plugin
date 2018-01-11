@@ -4,7 +4,6 @@ import ch.ethz.ssh2.Connection;
 import com.github.lkq.maven.plugin.deploydeps.DeployerConfig;
 import com.github.lkq.maven.plugin.deploydeps.deployer.ssh.SSHClient;
 import org.apache.commons.io.FileUtils;
-import org.apache.maven.plugin.MojoExecutionException;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,8 +49,8 @@ public class DeployerFactory {
     private Deployer createCustomDeployer(DeployerConfig.CustomConfig config, String projectTargetDirectory) {
         Object target;
         try {
-            setupProjectCustomClassLoader(projectTargetDirectory);
-            Class<?> clz = Thread.currentThread().getContextClassLoader().loadClass(config.getClassName());
+            URLClassLoader classLoader = createTargetProjectClassLoader(projectTargetDirectory);
+            Class<?> clz = classLoader.loadClass(config.getClassName());
             String[] args = config.getConstructorArgs();
             if (args != null && args.length > 0) {
 
@@ -74,15 +73,13 @@ public class DeployerFactory {
     }
 
     /**
-     * Setup class loader which can load the classes from the target project output folder
+     * create class loader which can load the classes from the target project output folder
      *
      * @param projectOutputDirectory
-     * @throws MojoExecutionException
+     * @throws MalformedURLException
      */
-    private void setupProjectCustomClassLoader(String projectOutputDirectory) throws MalformedURLException {
-            URL url = new File(projectOutputDirectory).toURI().toURL();
-
-            URLClassLoader classLoader = new URLClassLoader(new URL[]{url}, getClass().getClassLoader());
-            Thread.currentThread().setContextClassLoader(classLoader);
+    private URLClassLoader createTargetProjectClassLoader(String projectOutputDirectory) throws MalformedURLException {
+        URL url = new File(projectOutputDirectory).toURI().toURL();
+        return new URLClassLoader(new URL[]{url}, getClass().getClassLoader());
     }
 }
