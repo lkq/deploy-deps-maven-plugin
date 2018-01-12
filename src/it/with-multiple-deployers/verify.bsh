@@ -1,0 +1,38 @@
+import java.io.*;
+import org.codehaus.plexus.util.FileUtils;
+import java.util.regex.*;
+
+try
+{
+    System.out.println("Running verification...");
+    File file = new File( basedir, "build.log" );
+    String buf = FileUtils.fileRead( file );
+
+    Pattern stubPattern1 = Pattern.compile("stub deployer user=user1 host=host1");
+    Matcher stubMatcher1 = stubPattern1.matcher( buf );
+    if ( !stubMatcher1.find() ) {
+        System.out.println( "failed to call deployer stub 1" );
+        return false;
+    }
+
+    Pattern stubPattern2 = Pattern.compile("stub deployer user=user2 host=host2");
+    Matcher stubMatcher2 = stubPattern2.matcher( buf );
+    if ( !stubMatcher2.find() ) {
+        System.out.println( "failed to call deployer stub 2" );
+        return false;
+    }
+
+    Pattern successPattern = Pattern.compile( "BUILD SUCCESS" );
+    Matcher successMatcher = successPattern.matcher( buf );
+    if ( !successMatcher.find() ) {
+        System.out.println( "build failed" );
+        return false;
+    }
+}
+catch( Throwable t )
+{
+    t.printStackTrace();
+    return false;
+}
+
+return true;

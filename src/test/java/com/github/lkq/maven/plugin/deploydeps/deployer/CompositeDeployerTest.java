@@ -5,6 +5,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.Arrays;
+
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.times;
@@ -21,8 +23,7 @@ public class CompositeDeployerTest {
 
     @Test
     public void canCallAllDeployers() throws Exception {
-        deployer = new CompositeDeployer();
-        deployer.with(deployer1).with(deployer2);
+        deployer = new CompositeDeployer(Arrays.asList(deployer1, deployer2));
 
         deployer.put("local", "remote", "mode");
 
@@ -32,8 +33,7 @@ public class CompositeDeployerTest {
 
     @Test
     public void willContinueIfOneOfTheDeployerFail() throws Exception {
-        deployer = new CompositeDeployer();
-        deployer.with(deployer1).with(deployer2);
+        deployer = new CompositeDeployer(Arrays.asList(deployer1, deployer2));
         willThrow(new RuntimeException("Mock Error")).given(deployer1).put(anyString(), anyString(), anyString());
 
         deployer.put("local", "remote", "mode");

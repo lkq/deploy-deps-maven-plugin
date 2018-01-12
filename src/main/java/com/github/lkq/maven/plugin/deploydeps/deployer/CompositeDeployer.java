@@ -12,9 +12,8 @@ public class CompositeDeployer implements Deployer {
 
     private List<Deployer> deployers = new ArrayList<>();
 
-    public CompositeDeployer with(Deployer deployer) {
-        deployers.add(deployer);
-        return this;
+    public CompositeDeployer(List<Deployer> deployers) {
+        this.deployers.addAll(deployers);
     }
 
     @Override

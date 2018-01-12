@@ -1,5 +1,6 @@
 package com.github.lkq.maven.plugin.deploydeps;
 
+import com.github.lkq.maven.plugin.deploydeps.deployer.CompositeDeployer;
 import com.github.lkq.maven.plugin.deploydeps.deployer.Deployer;
 import com.github.lkq.maven.plugin.deploydeps.deployer.DeployerFactory;
 import org.apache.maven.artifact.Artifact;
@@ -25,6 +26,7 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Mojo(name = "deploy-deps", requiresDependencyResolution = ResolutionScope.RUNTIME)
@@ -37,7 +39,9 @@ public class DeployDepsMojo extends AbstractMojo {
     @Parameter
     private String targetFileMode;
     @Parameter
-    DeployerConfig deployer;
+    List<DefaultDeployer> deployers;
+    @Parameter
+    List<CustomDeployer> customDeployers;
     @Parameter
     private boolean dryRun;
 
@@ -62,15 +66,21 @@ public class DeployDepsMojo extends AbstractMojo {
         Log logger = getLog();
         logInfo(logger);
 
-        Deployer artifactDeployer = null;
+        Deployer artifactDeployer;
         if (dryRun) {
             // requires maven-plugin-plugin:3.5, otherwise can not use lambda
             artifactDeployer = (localFile, remotePath, mode) -> logger.info("dry run, not putting, from [" + localFile + "] to [" + remotePath + "], mode=" + mode);
         } else {
+            List<Deployer> deployers = new ArrayList<>();
             try {
-                artifactDeployer = deployerFactory.create(deployer, project.getBuild().getOutputDirectory());
-            } catch (IOException e) {
+                deployers.addAll(deployerFactory.create(this.deployers));
+                deployers.addAll(deployerFactory.create(this.customDeployers, project.getBuild().getOutputDirectory()));
+                artifactDeployer = new CompositeDeployer(deployers);
+            } catch (Throwable e) {
                 throw new MojoExecutionException("failed to create deployer", e);
+            }
+            if (deployers.size() <= 0) {
+                throw new MojoExecutionException("no available deployer");
             }
         }
 
@@ -96,9 +106,9 @@ public class DeployDepsMojo extends AbstractMojo {
                         try {
                             artifactResolver.resolve(artifact, remoteArtifactRepositories, localRepository);
                         } catch (ArtifactResolutionException e) {
-                            logger.info("failed to resolve artifact");
+                            logger.info("failed to resolve artifact:" + artifact, e);
                         } catch (ArtifactNotFoundException e) {
-                            logger.info("artifact not found");
+                            logger.info("artifact not found: " + artifact, e);
                         }
                         String artifactPath = localRepository.pathOf(artifact);
                         String localPath = localRepository.getBasedir() + File.separator + artifactPath;
@@ -130,7 +140,7 @@ public class DeployDepsMojo extends AbstractMojo {
 
         logger.info("target repository:  " + targetRepository);
         logger.info("target file mode:  " + targetFileMode);
-        logger.info("deployer config:  " + deployer);
+        logger.info("deployer config:  " + deployers);
         logger.info("dry run:  " + dryRun);
 
     }

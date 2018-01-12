@@ -1,8 +1,10 @@
 package com.github.lkq.maven.plugin.deploydeps.deployer;
 
 import ch.ethz.ssh2.Connection;
-import com.github.lkq.maven.plugin.deploydeps.DeployerConfig;
+import com.github.lkq.maven.plugin.deploydeps.CustomDeployer;
+import com.github.lkq.maven.plugin.deploydeps.DefaultDeployer;
 import com.github.lkq.maven.plugin.deploydeps.deployer.ssh.SSHClient;
+import com.github.lkq.maven.plugin.deploydeps.logging.Logger;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -13,40 +15,54 @@ import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DeployerFactory {
 
-    public Deployer create(DeployerConfig config, String projectTargetDirectory) throws IOException {
-        CompositeDeployer deployer = new CompositeDeployer();
-        if (config.getSsh() != null) {
-            deployer.with(createSSHDeployer(config.getSsh()));
+    public List<Deployer> create(List<DefaultDeployer> defaultDeployers) {
+        List<Deployer> deployers = new ArrayList<>();
+        if (defaultDeployers != null && defaultDeployers.size() > 0) {
+            for (DefaultDeployer sshConfig : defaultDeployers) {
+                Logger.get().info("creating ssh deployer with config: " + sshConfig);
+                deployers.add(createSSHDeployer(sshConfig));
+            }
         }
-        if (config.getCustom() != null) {
-            deployer.with(createCustomDeployer(config.getCustom(), projectTargetDirectory));
-        }
-        if (deployer.deployerCount() <= 0) {
-            throw new RuntimeException("no deployer available");
-        }
-        return deployer;
+        return deployers;
     }
 
-    private Deployer createSSHDeployer(DeployerConfig.SSHConfig config) throws IOException {
-        String password = "";
-        if (config.getPasswordFile() != null && !"".equals(config.getPasswordFile().trim())) {
-            password = FileUtils.readFileToString(new File(config.getPasswordFile()), "UTF-8");
+    public List<Deployer> create(List<CustomDeployer> customDeployers, String projectTargetDirectory) {
+        List<Deployer> deployers = new ArrayList<>();
+        if (customDeployers != null && customDeployers.size() > 0) {
+            for (CustomDeployer customConfig : customDeployers) {
+                Logger.get().info("creating custom deployer with config: " + customConfig);
+                deployers.add(createCustomDeployer(customConfig, projectTargetDirectory));
+            }
         }
-        // TODO: allow passing port number from config
-        Connection connection = new Connection(config.getHost(), 22);
-        connection.connect();
-        boolean connected = connection.authenticateWithPublicKey(config.getUser(), new File(config.getKeyFile()), password);
-        if (connected) {
-            return new SSHDeployer(new SSHClient(connection));
-        } else {
+        return deployers;
+    }
+
+    private Deployer createSSHDeployer(DefaultDeployer config) {
+        try {
+            String password = "";
+            if (config.getPasswordFile() != null && !"".equals(config.getPasswordFile().trim())) {
+                password = FileUtils.readFileToString(new File(config.getPasswordFile()), "UTF-8");
+            }
+            // TODO: allow passing port number from config
+            Connection connection = new Connection(config.getHost(), 22);
+            connection.connect();
+            boolean connected = connection.authenticateWithPublicKey(config.getUser(), new File(config.getKeyFile()), password);
+            if (connected) {
+                return new SSHDeployer(new SSHClient(connection));
+            } else {
+                throw new RuntimeException("failed to establish connection:" + config);
+            }
+        } catch (IOException e) {
             throw new RuntimeException("failed to establish connection:" + config);
         }
     }
 
-    private Deployer createCustomDeployer(DeployerConfig.CustomConfig config, String projectTargetDirectory) {
+    private Deployer createCustomDeployer(CustomDeployer config, String projectTargetDirectory) {
         Object target;
         try {
             URLClassLoader classLoader = createTargetProjectClassLoader(projectTargetDirectory);

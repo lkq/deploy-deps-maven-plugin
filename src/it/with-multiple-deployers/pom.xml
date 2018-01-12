@@ -50,6 +50,13 @@
                                 <arg>host1</arg>
                             </constructorArgs>
                         </deployer>
+                        <deployer>
+                            <className>com.github.lkq.maven.plugin.deploydeps.DeployerStub</className>
+                            <constructorArgs>
+                                <arg>user2</arg>
+                                <arg>host2</arg>
+                            </constructorArgs>
+                        </deployer>
                     </customDeployers>
                 </configuration>
             </plugin>

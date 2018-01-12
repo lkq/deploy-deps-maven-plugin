@@ -1,14 +1,15 @@
 package com.github.lkq.maven.plugin.deploydeps.deployer;
 
-import com.github.lkq.maven.plugin.deploydeps.DeployerConfig;
+import com.github.lkq.maven.plugin.deploydeps.CustomDeployer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -20,8 +21,8 @@ public class DeployerFactoryTest {
 
     DeployerFactory factory;
 
-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-    private DeployerConfig config;
+    @Mock
+    private CustomDeployer customConfig;
 
     @Before
     public void setUp() throws Exception {
@@ -30,16 +31,18 @@ public class DeployerFactoryTest {
 
     @Test
     public void canCreateCustomDeployer() throws Exception {
-        given(config.getSsh()).willReturn(null);
-        given(config.getCustom().getClassName()).willReturn(DummyDeployer.class.getName());
-        given(config.getCustom().getConstructorArgs()).willReturn(new String[]{"user", "host"});
-        CompositeDeployer deployer = (CompositeDeployer) factory.create(config, "target");
+        List<CustomDeployer> customConfigs = Arrays.asList(customConfig);
 
-        assertThat(deployer.deployerCount(), is(1));
-        Deployer proxyDeployer = deployer.getDeployer(0);
+        given(customConfig.getClassName()).willReturn(DummyDeployer.class.getName());
+        given(customConfig.getConstructorArgs()).willReturn(new String[]{"user", "host"});
+
+        List<Deployer> deployers = factory.create(customConfigs, "target");
+
+        assertThat(deployers.size(), is(1));
+        Deployer proxyDeployer = deployers.get(0);
         assertTrue(proxyDeployer instanceof Proxy);
 
-        deployer.put("local", "remote", "640");
+        proxyDeployer.put("local", "remote", "640");
 
         ProxyDeployerHandler handler = (ProxyDeployerHandler) Proxy.getInvocationHandler(proxyDeployer);
         DummyDeployer target = (DummyDeployer) handler.getTarget();
