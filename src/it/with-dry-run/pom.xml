@@ -31,13 +31,13 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <targetPath>/home/ec2-user/repository</targetPath>
                     <deployer>
                         <ssh>
                             <user>user</user>
                             <host>host</host>
                             <keyFile>/some/file</keyFile>
                             <passwordFile>/some/file</passwordFile>
+                            <targetPath>/home/ec2-user/repository</targetPath>
                         </ssh>
                     </deployer>
                 </configuration>

@@ -41,13 +41,14 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <targetPath>/home/ec2-user/repository</targetPath>
+
                     <customDeployers>
                         <deployer>
                             <className>com.github.lkq.maven.plugin.deploydeps.DeployerStub</className>
                             <constructorArgs>
                                 <arg>user1</arg>
                                 <arg>host1</arg>
+                                <arg>/home/ec2-user/repository</arg>
                             </constructorArgs>
                         </deployer>
                     </customDeployers>

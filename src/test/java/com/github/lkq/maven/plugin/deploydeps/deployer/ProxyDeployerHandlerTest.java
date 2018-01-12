@@ -25,10 +25,9 @@ public class ProxyDeployerHandlerTest {
     @Test
     public void canInvokePut() throws Throwable {
         Deployer proxy = (Deployer) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{Deployer.class}, handler);
-        proxy.put("localPath", "remotePath", "0640");
+        proxy.put("localPath", "remotePath");
 
-        assertThat(deployer.localFile, is("localPath"));
-        assertThat(deployer.remotePath, is("remotePath"));
-        assertThat(deployer.mode, is("0640"));
+        assertThat(deployer.localRepoPath, is("localPath"));
+        assertThat(deployer.repoArtifactPath, is("remotePath"));
     }
 }

@@ -17,23 +17,33 @@ public class SSHDeployer implements Deployer {
     private Log logger = Logger.get();
 
     private final SSHClient ssh;
+    private final String targetPath;
+    private final String targetFileMode;
 
-    public SSHDeployer(SSHClient ssh) throws IOException {
+    public SSHDeployer(SSHClient ssh, String targetPath, String targetFileMode) throws IOException {
         this.ssh = ssh;
+        this.targetPath = targetPath;
+        if (targetFileMode == null || "".equals(targetFileMode.trim())) {
+            this.targetFileMode = "640";
+        } else {
+            this.targetFileMode = targetFileMode;
+        }
     }
 
-    public void put(String localFile, String targetDirectory, String mode) throws IOException {
-        if (mkdir(targetDirectory)) {
-            String targetFile = targetDirectory + "/" + new File(localFile).getName();
+    public void put(String localRepoPath, String repoArtifactPath) throws IOException {
+        String localFile = new File(localRepoPath, repoArtifactPath).getAbsolutePath();
+        String targetFile = targetPath + "/" + repoArtifactPath;
+        String targetFolder = targetFile.substring(0, targetFile.lastIndexOf('/'));
+        if (mkdir(targetFolder)) {
             String remoteMD5 = remoteMD5(targetFile);
             logger.info("md5="+ remoteMD5 + ", file=" + targetFile);
             if ("".equals(remoteMD5)) {
-                doPut(localFile, targetDirectory, mode);
+                doPut(localFile, targetFolder, targetFileMode);
             } else {
                 String localMD5 = localMD5(localFile);
                 logger.info("md5=" + localMD5 + ", file=" + localFile);
                 if (!localMD5.equals(remoteMD5)) {
-                    doPut(localFile, targetDirectory, mode);
+                    doPut(localFile, targetFolder, targetFileMode);
                 } else {
                     logger.info("file already exists, skipping... " + targetFile);
                 }
@@ -41,9 +51,9 @@ public class SSHDeployer implements Deployer {
         }
     }
 
-    private void doPut(String localFile, String targetDirectory, String mode) throws IOException {
-        logger.info("copying file from [" + localFile + "] to [" + targetDirectory + "], mode=" + mode);
-        ssh.scp(localFile, targetDirectory, mode);
+    private void doPut(String localFile, String targetPath, String mode) throws IOException {
+        logger.info("copying file from [" + localFile + "] to [" + targetPath + "], mode=" + mode);
+        ssh.scp(localFile, targetPath, mode);
     }
 
     private String localMD5(String localFile) throws IOException {

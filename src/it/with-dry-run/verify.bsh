@@ -8,7 +8,7 @@ try
     File file = new File( basedir, "build.log" );
     String buf = FileUtils.fileRead( file );
 
-    Pattern stubPattern = Pattern.compile("dry run, not putting");
+    Pattern stubPattern = Pattern.compile("dry run, deploying");
     Matcher stubMatcher = stubPattern.matcher( buf );
     if ( !stubMatcher.find() ) {
         System.out.println( "failed to call deployer stub" );

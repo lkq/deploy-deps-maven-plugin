@@ -41,7 +41,6 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <targetPath>/home/ec2-user/repository</targetPath>
                     <customDeployers>
                         <deployer>
                             <className>com.github.lkq.maven.plugin.deploydeps.DeployerStub</className>

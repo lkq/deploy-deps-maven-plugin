@@ -24,7 +24,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,10 +33,6 @@ public class DeployDepsMojo extends AbstractMojo {
 
     private final DeployerFactory deployerFactory = new DeployerFactory();
 
-    @Parameter
-    private String targetRepository;
-    @Parameter
-    private String targetFileMode;
     @Parameter
     List<DefaultDeployer> deployers;
     @Parameter
@@ -69,7 +64,7 @@ public class DeployDepsMojo extends AbstractMojo {
         Deployer artifactDeployer;
         if (dryRun) {
             // requires maven-plugin-plugin:3.5, otherwise can not use lambda
-            artifactDeployer = (localFile, remotePath, mode) -> logger.info("dry run, not putting, from [" + localFile + "] to [" + remotePath + "], mode=" + mode);
+            artifactDeployer = (localFile, artifactPath) -> logger.info("dry run, deploying " + localFile);
         } else {
             List<Deployer> deployers = new ArrayList<>();
             try {
@@ -110,12 +105,10 @@ public class DeployDepsMojo extends AbstractMojo {
                         } catch (ArtifactNotFoundException e) {
                             logger.info("artifact not found: " + artifact, e);
                         }
-                        String artifactPath = localRepository.pathOf(artifact);
-                        String localPath = localRepository.getBasedir() + File.separator + artifactPath;
-                        String remotePath = targetRepository + "/" + artifactPath.substring(0, artifactPath.lastIndexOf('/'));
+                        String repoArtifactPath = localRepository.pathOf(artifact);
                         try {
-                            logger.info("copying from " + localPath + " to " + remotePath);
-                            artifactDeployer.put(localPath, remotePath, targetFileMode);
+                            logger.info("deploying " + repoArtifactPath);
+                            artifactDeployer.put(localRepository.getBasedir(), repoArtifactPath);
                         } catch (IOException e) {
                             logger.error("failed to transfer file", e);
                         }
@@ -138,9 +131,6 @@ public class DeployDepsMojo extends AbstractMojo {
 
         logger.info("artifacts to deploy: " + project.getDependencyArtifacts());
 
-        logger.info("target repository:  " + targetRepository);
-        logger.info("target file mode:  " + targetFileMode);
-        logger.info("deployer config:  " + deployers);
         logger.info("dry run:  " + dryRun);
 
     }

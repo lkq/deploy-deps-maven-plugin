@@ -53,7 +53,7 @@ public class DeployerFactory {
             connection.connect();
             boolean connected = connection.authenticateWithPublicKey(config.getUser(), new File(config.getKeyFile()), password);
             if (connected) {
-                return new SSHDeployer(new SSHClient(connection));
+                return new SSHDeployer(new SSHClient(connection), config.getTargetPath(), config.getTargetFileMode());
             } else {
                 throw new RuntimeException("failed to establish connection:" + config);
             }

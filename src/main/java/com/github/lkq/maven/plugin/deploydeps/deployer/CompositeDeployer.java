@@ -17,18 +17,17 @@ public class CompositeDeployer implements Deployer {
     }
 
     @Override
-    public void put(String localFile, String remotePath, String mode) {
+    public void put(String localRepoPath, String repoArtifactPath) {
         if (deployers.size() <= 0) {
             throw new RuntimeException("no deployer available");
         }
         for (Deployer deployer : deployers) {
             try {
-                deployer.put(localFile, remotePath, mode);
+                deployer.put(localRepoPath, repoArtifactPath);
             } catch (Exception ignored) {
                 String msg = "failed to deploy file: deployer=" + deployer +
-                        ", localFile=" + localFile +
-                        ", remotePath=" + remotePath +
-                        ", mode=" + mode;
+                        ", localRepoPath=" + localRepoPath +
+                        ", repoArtifactPath=" + repoArtifactPath;
                 logger.warn(msg, ignored);
                 // continue deploy
             }

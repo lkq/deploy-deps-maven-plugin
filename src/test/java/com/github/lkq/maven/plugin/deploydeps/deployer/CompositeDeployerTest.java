@@ -25,20 +25,20 @@ public class CompositeDeployerTest {
     public void canCallAllDeployers() throws Exception {
         deployer = new CompositeDeployer(Arrays.asList(deployer1, deployer2));
 
-        deployer.put("local", "remote", "mode");
+        deployer.put("local", "remote");
 
-        verify(deployer1, times(1)).put("local", "remote", "mode");
-        verify(deployer1, times(1)).put("local", "remote", "mode");
+        verify(deployer1, times(1)).put("local", "remote");
+        verify(deployer1, times(1)).put("local", "remote");
     }
 
     @Test
     public void willContinueIfOneOfTheDeployerFail() throws Exception {
         deployer = new CompositeDeployer(Arrays.asList(deployer1, deployer2));
-        willThrow(new RuntimeException("Mock Error")).given(deployer1).put(anyString(), anyString(), anyString());
+        willThrow(new RuntimeException("Mock Error")).given(deployer1).put(anyString(), anyString());
 
-        deployer.put("local", "remote", "mode");
+        deployer.put("local", "remote");
 
-        verify(deployer1, times(1)).put("local", "remote", "mode");
-        verify(deployer1, times(1)).put("local", "remote", "mode");
+        verify(deployer1, times(1)).put("local", "remote");
+        verify(deployer1, times(1)).put("local", "remote");
     }
 }

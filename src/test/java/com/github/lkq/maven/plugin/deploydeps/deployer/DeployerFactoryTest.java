@@ -42,16 +42,15 @@ public class DeployerFactoryTest {
         Deployer proxyDeployer = deployers.get(0);
         assertTrue(proxyDeployer instanceof Proxy);
 
-        proxyDeployer.put("local", "remote", "640");
+        proxyDeployer.put("/local", "com/github/lkq/some-file");
 
         ProxyDeployerHandler handler = (ProxyDeployerHandler) Proxy.getInvocationHandler(proxyDeployer);
         DummyDeployer target = (DummyDeployer) handler.getTarget();
 
         assertThat(target.user, is("user"));
         assertThat(target.host, is("host"));
-        assertThat(target.localFile, is("local"));
-        assertThat(target.remotePath, is("remote"));
-        assertThat(target.mode, is("640"));
+        assertThat(target.localRepoPath, is("/local"));
+        assertThat(target.repoArtifactPath, is("com/github/lkq/some-file"));
 
     }
 }

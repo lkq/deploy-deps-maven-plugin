@@ -6,6 +6,8 @@ public class DefaultDeployer {
     private String keyFile;
     private String passwordFile;
     private String host;
+    private String targetPath;
+    private String targetFileMode;
 
     public String getUser() {
         return user;
@@ -39,13 +41,31 @@ public class DefaultDeployer {
         this.host = host;
     }
 
+    public String getTargetPath() {
+        return targetPath;
+    }
+
+    public void setTargetPath(String targetPath) {
+        this.targetPath = targetPath;
+    }
+
+    public String getTargetFileMode() {
+        return targetFileMode;
+    }
+
+    public void setTargetFileMode(String targetFileMode) {
+        this.targetFileMode = targetFileMode;
+    }
+
     @Override
     public String toString() {
-        return "SSHConfig{" +
+        return "DefaultDeployer{" +
                 "user='" + user + '\'' +
                 ", keyFile='" + keyFile + '\'' +
                 ", passwordFile='" + passwordFile + '\'' +
                 ", host='" + host + '\'' +
+                ", targetPath='" + targetPath + '\'' +
+                ", targetFileMode='" + targetFileMode + '\'' +
                 '}';
     }
 }

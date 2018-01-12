@@ -33,7 +33,7 @@ public class SSHDeployerTest {
 
     @Before
     public void setUp() throws Exception {
-        deployer = new SSHDeployer(ssh);
+        deployer = new SSHDeployer(ssh, "/remote", "0740");
     }
 
     @Test
@@ -42,17 +42,17 @@ public class SSHDeployerTest {
         given(mkdirSession.getStdout()).willReturn(new ByteArrayInputStream("".getBytes()));
         given(mkdirSession.getStderr()).willReturn(new ByteArrayInputStream("".getBytes()));
         SSHClient.ExecResult mkdirRes = SSHClient.ExecResult.success(mkdirSession);
-        given(ssh.execute("mkdir -p remote")).willReturn(mkdirRes);
+        given(ssh.execute("mkdir -p /remote/com/github/lkq")).willReturn(mkdirRes);
 
         // get remote file md5
         given(md5Session.getStdout()).willReturn(new ByteArrayInputStream("".getBytes()));
         given(md5Session.getStderr()).willReturn(new ByteArrayInputStream("".getBytes()));
         SSHClient.ExecResult md5Res = SSHClient.ExecResult.success(md5Session);
-        given(ssh.execute("md5sum remote/file")).willReturn(md5Res);
+        given(ssh.execute("md5sum /remote/com/github/lkq/some-file")).willReturn(md5Res);
 
-        deployer.put("local/file", "remote", "0640");
+        deployer.put("/repo", "com/github/lkq/some-file");
 
-        verify(ssh, times(1)).scp("local/file", "remote", "0640");
+        verify(ssh, times(1)).scp("/repo/com/github/lkq/some-file", "/remote/com/github/lkq", "0740");
     }
 
     @Test
@@ -61,9 +61,9 @@ public class SSHDeployerTest {
         given(mkdirSession.getStdout()).willReturn(new ByteArrayInputStream("".getBytes()));
         given(mkdirSession.getStderr()).willReturn(new ByteArrayInputStream("error".getBytes()));
         SSHClient.ExecResult success = SSHClient.ExecResult.success(mkdirSession);
-        given(ssh.execute("mkdir -p remote")).willReturn(success);
+        given(ssh.execute("mkdir -p /remote/com/github/lkq")).willReturn(success);
 
-        deployer.put("local", "remote", "0640");
+        deployer.put("/repo", "com/github/lkq/some-file");
 
         verify(ssh, never()).scp(anyString(), anyString(), anyString());
     }
@@ -74,19 +74,20 @@ public class SSHDeployerTest {
         given(mkdirSession.getStdout()).willReturn(new ByteArrayInputStream("".getBytes()));
         given(mkdirSession.getStderr()).willReturn(new ByteArrayInputStream("".getBytes()));
         SSHClient.ExecResult mkdirRes = SSHClient.ExecResult.success(mkdirSession);
-        given(ssh.execute("mkdir -p remote")).willReturn(mkdirRes);
+        given(ssh.execute("mkdir -p /remote/com/github/lkq")).willReturn(mkdirRes);
 
         // get remote file md5, return same as local_file
-        URL localFileURL = this.getClass().getClassLoader().getResource("local_file.txt");
+        String localRepo = this.getClass().getClassLoader().getResource(".").getPath();
+        URL localFileURL = this.getClass().getClassLoader().getResource("com/github/lkq/some-file");
         String localFile = localFileURL.getPath();
 
         String md5 = DatatypeConverter.printHexBinary(MessageDigest.getInstance("MD5").digest(Files.readAllBytes(Paths.get(localFile))));
         given(md5Session.getStdout()).willReturn(new ByteArrayInputStream(md5.getBytes()));
         given(md5Session.getStderr()).willReturn(new ByteArrayInputStream("".getBytes()));
         SSHClient.ExecResult md5Res = SSHClient.ExecResult.success(md5Session);
-        given(ssh.execute("md5sum remote/local_file.txt")).willReturn(md5Res);
+        given(ssh.execute("md5sum /remote/com/github/lkq/some-file")).willReturn(md5Res);
 
-        deployer.put(localFile, "remote", "0640");
+        deployer.put(localRepo, "com/github/lkq/some-file");
 
         verify(ssh, never()).scp(anyString(), anyString(), anyString());
     }
@@ -97,19 +98,20 @@ public class SSHDeployerTest {
         given(mkdirSession.getStdout()).willReturn(new ByteArrayInputStream("".getBytes()));
         given(mkdirSession.getStderr()).willReturn(new ByteArrayInputStream("".getBytes()));
         SSHClient.ExecResult mkdirRes = SSHClient.ExecResult.success(mkdirSession);
-        given(ssh.execute("mkdir -p remote")).willReturn(mkdirRes);
+        given(ssh.execute("mkdir -p /remote/com/github/lkq")).willReturn(mkdirRes);
 
         // get remote file md5
         given(md5Session.getStdout()).willReturn(new ByteArrayInputStream("asdf".getBytes()));
         given(md5Session.getStderr()).willReturn(new ByteArrayInputStream("".getBytes()));
         SSHClient.ExecResult md5Res = SSHClient.ExecResult.success(md5Session);
-        given(ssh.execute("md5sum remote/local_file.txt")).willReturn(md5Res);
+        given(ssh.execute("md5sum /remote/com/github/lkq/some-file")).willReturn(md5Res);
 
-        URL localFileURL = this.getClass().getClassLoader().getResource("local_file.txt");
+        String localRepo = this.getClass().getClassLoader().getResource(".").getPath();
+        URL localFileURL = this.getClass().getClassLoader().getResource("com/github/lkq/some-file");
         String localFile = localFileURL.getPath();
 
-        deployer.put(localFile, "remote", "0640");
+        deployer.put(localRepo, "com/github/lkq/some-file");
 
-        verify(ssh, times(1)).scp(localFile, "remote", "0640");
+        verify(ssh, times(1)).scp(localFile, "/remote/com/github/lkq", "0740");
     }
 }
