@@ -1,5 +1,6 @@
 package com.github.lkq.maven.plugin.deploydeps;
 
+import com.github.lkq.maven.plugin.deploydeps.artifact.ArtifactCollector;
 import com.github.lkq.maven.plugin.deploydeps.deployer.CompositeDeployer;
 import com.github.lkq.maven.plugin.deploydeps.deployer.Deployer;
 import com.github.lkq.maven.plugin.deploydeps.deployer.DeployerFactory;
@@ -7,13 +8,7 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
-import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
-import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
-import org.apache.maven.artifact.versioning.VersionRange;
-import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -31,7 +26,6 @@ import java.util.List;
 @Mojo(name = "deploy-deps", requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class DeployDepsMojo extends AbstractMojo {
 
-    private final DeployerFactory deployerFactory = new DeployerFactory();
 
     @Parameter
     List<DefaultConfig> deployers;
@@ -56,7 +50,13 @@ public class DeployDepsMojo extends AbstractMojo {
     @Component
     private ArtifactResolver artifactResolver;
 
-    private DefaultConfigProcessor configProcessor = new DefaultConfigProcessor();
+    private final DeployerFactory deployerFactory;
+    private final DefaultConfigProcessor configProcessor;
+
+    public DeployDepsMojo() {
+        deployerFactory = new DeployerFactory();
+        configProcessor = new DefaultConfigProcessor();
+    }
 
     public void execute() throws MojoExecutionException, MojoFailureException {
 
@@ -93,48 +93,20 @@ public class DeployDepsMojo extends AbstractMojo {
             }
         }
 
-        List<Dependency> dependencies = project.getDependencies();
-        for (Dependency dependency : dependencies) {
-            logger.info("dependency: " + dependency);
-            VersionRange versionRange = null;
+        ArtifactCollector artifactCollector = new ArtifactCollector(artifactFactory,
+                artifactMetadataSource,
+                artifactResolver,
+                localRepository,
+                remoteArtifactRepositories);
+        List<Artifact> artifacts = artifactCollector.collect(project.getDependencies());
+        for (Artifact artifact : artifacts) {
+            String repoArtifactPath = localRepository.pathOf(artifact);
             try {
-                versionRange = VersionRange.createFromVersionSpec(dependency.getVersion());
-            } catch (InvalidVersionSpecificationException e) {
-                String error = "invalid version spec: " + dependency.getVersion();
-                logger.error(error, e);
-                throw new RuntimeException(error, e);
-            }
-            Artifact dependencyArtifact = artifactFactory.createDependencyArtifact(dependency.getGroupId(), dependency.getArtifactId(), versionRange, dependency.getType(), dependency.getClassifier(), dependency.getScope());
-            try {
-                List<ArtifactVersion> availableVersions = artifactMetadataSource.retrieveAvailableVersions(dependencyArtifact, localRepository, remoteArtifactRepositories);
-                logger.info("found available versions for " + dependencyArtifact.getArtifactId() + ": " + availableVersions);
-                for (ArtifactVersion version : availableVersions) {
-                    if (versionRange.containsVersion(version)) {
-
-                        Artifact artifact = artifactFactory.createArtifactWithClassifier(dependency.getGroupId(), dependency.getArtifactId(), version.toString(), dependency.getType(), dependency.getClassifier());
-                        try {
-                            artifactResolver.resolve(artifact, remoteArtifactRepositories, localRepository);
-                        } catch (ArtifactResolutionException e) {
-                            logger.info("failed to resolve artifact:" + artifact, e);
-                        } catch (ArtifactNotFoundException e) {
-                            logger.info("artifact not found: " + artifact, e);
-                        }
-                        String repoArtifactPath = localRepository.pathOf(artifact);
-                        try {
-                            logger.info("deploying " + repoArtifactPath);
-                            artifactDeployer.put(localRepository.getBasedir(), repoArtifactPath);
-                        } catch (IOException e) {
-                            logger.error("failed to transfer file", e);
-                        }
-                    }
-                }
-
-            } catch (Exception e) {
-                logger.error("failed to deploy dependencies", e);
+                artifactDeployer.put(localRepository.getBasedir(), repoArtifactPath);
+            } catch (IOException e) {
+                logger.error("failed to deploy");
             }
         }
-
-
     }
 
     private void logInfo(Log logger) {
