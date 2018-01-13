@@ -3,13 +3,16 @@ package com.github.lkq.maven.plugin.deploydeps.deployer.ssh;
 import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.SCPClient;
 import ch.ethz.ssh2.Session;
+import com.github.lkq.maven.plugin.deploydeps.logging.Logger;
 import org.apache.commons.io.IOUtils;
+import org.apache.maven.plugin.logging.Log;
 
 import java.io.IOException;
 
 public class SSHClient {
     private final Connection connection;
     private final SCPClient scp;
+    private Log logger = Logger.get();
 
     public SSHClient(Connection connection) throws IOException {
         this.connection = connection;
@@ -25,13 +28,25 @@ public class SSHClient {
         try {
             session = this.connection.openSession();
             session.execCommand(cmd);
-            return ExecResult.success(session);
+            return ExecResult.success(IOUtils.toString(session.getStdout(), "UTF-8"), IOUtils.toString(session.getStderr(), "UTF-8"));
         } catch (IOException e) {
+            logger.debug("failed to execute command " + cmd, e);
             return ExecResult.fail();
         } finally {
             if (session != null) {
                 session.close();
             }
+        }
+    }
+
+    public boolean mkdir(String path) throws IOException {
+        SSHClient.ExecResult result = execute("mkdir -p " + path);
+        String error = result.getStderr();
+        if (error == null || "".equals(error.trim())) {
+            return true;
+        } else {
+            logger.info("failed to create remote dir, error=" + error + ", path=" + path);
+            return false;
         }
     }
 
@@ -44,10 +59,10 @@ public class SSHClient {
             return new ExecResult(false);
         }
 
-        public static ExecResult success(Session session) throws IOException {
+        public static ExecResult success(String stdout, String stderr) throws IOException {
             ExecResult execResult = new ExecResult(true);
-            execResult.stdout = IOUtils.toString(session.getStdout(), "UTF-8");
-            execResult.stderr = IOUtils.toString(session.getStderr(), "UTF-8");
+            execResult.stdout = stdout;
+            execResult.stderr = stderr;
             return execResult;
         }
 

@@ -32,10 +32,10 @@ public class DeployerFactory {
         return deployers;
     }
 
-    public List<Deployer> create(List<CustomConfig> customDeployers, String projectTargetDirectory) {
+    public List<Deployer> create(List<CustomConfig> customConfigs, String projectTargetDirectory) {
         List<Deployer> deployers = new ArrayList<>();
-        if (customDeployers != null && customDeployers.size() > 0) {
-            for (CustomConfig customConfig : customDeployers) {
+        if (customConfigs != null && customConfigs.size() > 0) {
+            for (CustomConfig customConfig : customConfigs) {
                 Logger.get().info("creating custom deployer with config: " + customConfig);
                 deployers.add(createCustomDeployer(customConfig, projectTargetDirectory));
             }
@@ -53,7 +53,7 @@ public class DeployerFactory {
             connection.connect();
             boolean connected = connection.authenticateWithPublicKey(config.getUser(), new File(config.getKeyFile()), password);
             if (connected) {
-                return new SSHDeployer(new SSHClient(connection), config.getTargetPath(), config.getTargetFileMode());
+                return new SSHDeployer(new SSHClient(connection), config.getTargetPath(), config.getTargetFileMode(), new MD5Checker());
             } else {
                 throw new RuntimeException("failed to establish connection:" + config);
             }
