@@ -49,7 +49,7 @@ public class DeployerFactory {
             if (config.getPasswordFile() != null && !"".equals(config.getPasswordFile().trim())) {
                 password = FileUtils.readFileToString(new File(config.getPasswordFile()), "UTF-8");
             }
-            Connection connection = new Connection(config.getHost(), 22);
+            Connection connection = new Connection(config.getHost(), Integer.valueOf(config.getPort()));
             connection.connect();
             boolean connected = connection.authenticateWithPublicKey(config.getUser(), new File(config.getKeyFile()), password);
             if (connected) {
