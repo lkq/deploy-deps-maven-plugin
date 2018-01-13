@@ -1,6 +1,6 @@
 package com.github.lkq.maven.plugin.deploydeps;
 
-public class DefaultDeployer {
+public class DefaultConfig {
 
     private String user;
     private String keyFile;
@@ -8,6 +8,7 @@ public class DefaultDeployer {
     private String host;
     private String targetPath;
     private String targetFileMode;
+    private String port;
 
     public String getUser() {
         return user;
@@ -57,15 +58,24 @@ public class DefaultDeployer {
         this.targetFileMode = targetFileMode;
     }
 
+    public String getPort() {
+        return port;
+    }
+
+    public void setPort(String port) {
+        this.port = port;
+    }
+
     @Override
     public String toString() {
-        return "DefaultDeployer{" +
+        return "DefaultConfig{" +
                 "user='" + user + '\'' +
                 ", keyFile='" + keyFile + '\'' +
                 ", passwordFile='" + passwordFile + '\'' +
                 ", host='" + host + '\'' +
                 ", targetPath='" + targetPath + '\'' +
                 ", targetFileMode='" + targetFileMode + '\'' +
+                ", port='" + port + '\'' +
                 '}';
     }
 }

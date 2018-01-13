@@ -2,7 +2,7 @@ package com.github.lkq.maven.plugin.deploydeps;
 
 import java.util.Arrays;
 
-public class CustomDeployer {
+public class CustomConfig {
 
     private String className;
 

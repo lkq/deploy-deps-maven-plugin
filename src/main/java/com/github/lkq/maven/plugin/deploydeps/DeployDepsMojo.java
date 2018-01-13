@@ -34,9 +34,9 @@ public class DeployDepsMojo extends AbstractMojo {
     private final DeployerFactory deployerFactory = new DeployerFactory();
 
     @Parameter
-    List<DefaultDeployer> deployers;
+    List<DefaultConfig> deployers;
     @Parameter
-    List<CustomDeployer> customDeployers;
+    List<CustomConfig> customDeployers;
     @Parameter
     private boolean dryRun;
 
@@ -56,10 +56,24 @@ public class DeployDepsMojo extends AbstractMojo {
     @Component
     private ArtifactResolver artifactResolver;
 
+    private DefaultConfigProcessor configProcessor = new DefaultConfigProcessor();
+
     public void execute() throws MojoExecutionException, MojoFailureException {
 
         Log logger = getLog();
         logInfo(logger);
+
+        try {
+            configProcessor.process(deployers);
+        } catch (Throwable t) {
+            throw new MojoExecutionException("invalid deployer config", t);
+        }
+
+        if (deployers == null || deployers.size() <= 0) {
+            if (customDeployers == null || customDeployers.size() <= 0) {
+                throw new MojoExecutionException("no deployer config");
+            }
+        }
 
         Deployer artifactDeployer;
         if (dryRun) {

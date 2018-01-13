@@ -41,7 +41,6 @@
                     </execution>
                 </executions>
                 <configuration>
-
                     <customDeployers>
                         <deployer>
                             <className>com.github.lkq.maven.plugin.deploydeps.DeployerStub</className>

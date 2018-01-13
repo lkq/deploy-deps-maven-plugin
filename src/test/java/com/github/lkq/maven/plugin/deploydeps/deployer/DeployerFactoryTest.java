@@ -1,6 +1,6 @@
 package com.github.lkq.maven.plugin.deploydeps.deployer;
 
-import com.github.lkq.maven.plugin.deploydeps.CustomDeployer;
+import com.github.lkq.maven.plugin.deploydeps.CustomConfig;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,7 +22,7 @@ public class DeployerFactoryTest {
     DeployerFactory factory;
 
     @Mock
-    private CustomDeployer customConfig;
+    private CustomConfig customConfig;
 
     @Before
     public void setUp() throws Exception {
@@ -31,7 +31,7 @@ public class DeployerFactoryTest {
 
     @Test
     public void canCreateCustomDeployer() throws Exception {
-        List<CustomDeployer> customConfigs = Arrays.asList(customConfig);
+        List<CustomConfig> customConfigs = Arrays.asList(customConfig);
 
         given(customConfig.getClassName()).willReturn(DummyDeployer.class.getName());
         given(customConfig.getConstructorArgs()).willReturn(new String[]{"user", "host"});

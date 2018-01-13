@@ -1,8 +1,8 @@
 package com.github.lkq.maven.plugin.deploydeps.deployer;
 
 import ch.ethz.ssh2.Connection;
-import com.github.lkq.maven.plugin.deploydeps.CustomDeployer;
-import com.github.lkq.maven.plugin.deploydeps.DefaultDeployer;
+import com.github.lkq.maven.plugin.deploydeps.CustomConfig;
+import com.github.lkq.maven.plugin.deploydeps.DefaultConfig;
 import com.github.lkq.maven.plugin.deploydeps.deployer.ssh.SSHClient;
 import com.github.lkq.maven.plugin.deploydeps.logging.Logger;
 import org.apache.commons.io.FileUtils;
@@ -20,10 +20,11 @@ import java.util.List;
 
 public class DeployerFactory {
 
-    public List<Deployer> create(List<DefaultDeployer> defaultDeployers) {
+    public List<Deployer> create(List<DefaultConfig> defaultConfigs) {
         List<Deployer> deployers = new ArrayList<>();
-        if (defaultDeployers != null && defaultDeployers.size() > 0) {
-            for (DefaultDeployer sshConfig : defaultDeployers) {
+        if (defaultConfigs != null && defaultConfigs.size() > 0) {
+
+            for (DefaultConfig sshConfig : defaultConfigs) {
                 Logger.get().info("creating ssh deployer with config: " + sshConfig);
                 deployers.add(createSSHDeployer(sshConfig));
             }
@@ -31,10 +32,10 @@ public class DeployerFactory {
         return deployers;
     }
 
-    public List<Deployer> create(List<CustomDeployer> customDeployers, String projectTargetDirectory) {
+    public List<Deployer> create(List<CustomConfig> customDeployers, String projectTargetDirectory) {
         List<Deployer> deployers = new ArrayList<>();
         if (customDeployers != null && customDeployers.size() > 0) {
-            for (CustomDeployer customConfig : customDeployers) {
+            for (CustomConfig customConfig : customDeployers) {
                 Logger.get().info("creating custom deployer with config: " + customConfig);
                 deployers.add(createCustomDeployer(customConfig, projectTargetDirectory));
             }
@@ -42,13 +43,12 @@ public class DeployerFactory {
         return deployers;
     }
 
-    private Deployer createSSHDeployer(DefaultDeployer config) {
+    private Deployer createSSHDeployer(DefaultConfig config) {
         try {
             String password = "";
             if (config.getPasswordFile() != null && !"".equals(config.getPasswordFile().trim())) {
                 password = FileUtils.readFileToString(new File(config.getPasswordFile()), "UTF-8");
             }
-            // TODO: allow passing port number from config
             Connection connection = new Connection(config.getHost(), 22);
             connection.connect();
             boolean connected = connection.authenticateWithPublicKey(config.getUser(), new File(config.getKeyFile()), password);
@@ -62,7 +62,7 @@ public class DeployerFactory {
         }
     }
 
-    private Deployer createCustomDeployer(CustomDeployer config, String projectTargetDirectory) {
+    private Deployer createCustomDeployer(CustomConfig config, String projectTargetDirectory) {
         Object target;
         try {
             URLClassLoader classLoader = createTargetProjectClassLoader(projectTargetDirectory);
