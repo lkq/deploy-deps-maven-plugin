@@ -4,6 +4,7 @@ import com.github.lkq.maven.plugin.deploydeps.artifact.ArtifactCollector;
 import com.github.lkq.maven.plugin.deploydeps.deployer.CompositeDeployer;
 import com.github.lkq.maven.plugin.deploydeps.deployer.Deployer;
 import com.github.lkq.maven.plugin.deploydeps.deployer.DeployerFactory;
+import com.github.lkq.maven.plugin.deploydeps.logging.Logger;
 import com.github.lkq.maven.plugin.deploydeps.report.Reporter;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
@@ -61,6 +62,7 @@ public class DeployDepsMojo extends AbstractMojo {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
 
+        Logger.init(this);
         Log logger = getLog();
 
         try {

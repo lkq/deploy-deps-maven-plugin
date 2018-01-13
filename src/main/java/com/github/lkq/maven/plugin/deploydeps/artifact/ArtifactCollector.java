@@ -19,7 +19,6 @@ import java.util.List;
 
 public class ArtifactCollector {
 
-    private Log logger = Logger.get();
     private ArtifactFactory artifactFactory;
     private ArtifactMetadataSource artifactMetadataSource;
     private ArtifactResolver artifactResolver;
@@ -41,6 +40,7 @@ public class ArtifactCollector {
 
     public List<Artifact> collect(List<Dependency> dependencies) {
 
+        Log logger = Logger.get();
         ArrayList<Artifact> artifacts = new ArrayList<>();
 
         for (Dependency dependency : dependencies) {
@@ -55,7 +55,7 @@ public class ArtifactCollector {
             Artifact dependencyArtifact = artifactFactory.createDependencyArtifact(dependency.getGroupId(), dependency.getArtifactId(), versionRange, dependency.getType(), dependency.getClassifier(), dependency.getScope());
             try {
                 List<ArtifactVersion> availableVersions = artifactMetadataSource.retrieveAvailableVersions(dependencyArtifact, localRepository, remoteArtifactRepositories);
-                logger.info("found available versions for " + dependencyArtifact.getArtifactId() + ": " + availableVersions);
+                logger.info(" available versions: " + dependencyArtifact.getArtifactId() + " " + availableVersions);
                 for (ArtifactVersion version : availableVersions) {
                     if (versionRange.containsVersion(version)) {
 

@@ -2,14 +2,11 @@ package com.github.lkq.maven.plugin.deploydeps.deployer;
 
 import com.github.lkq.maven.plugin.deploydeps.logging.Logger;
 import com.github.lkq.maven.plugin.deploydeps.report.Reporter;
-import org.apache.maven.plugin.logging.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class CompositeDeployer {
-
-    private Log logger = Logger.get();
 
     private final List<Deployer> deployers = new ArrayList<>();
     private final Reporter reporter;
@@ -29,7 +26,7 @@ public class CompositeDeployer {
                 }
             } catch (Exception ignored) {
                 reporter.reportFail(repoArtifactPath);
-                logger.warn("failed to deploy " + repoArtifactPath + " with " + deployer, ignored);
+                Logger.get().warn("failed to deploy " + repoArtifactPath + " with " + deployer, ignored);
                 // continue with other deployers
             }
         }

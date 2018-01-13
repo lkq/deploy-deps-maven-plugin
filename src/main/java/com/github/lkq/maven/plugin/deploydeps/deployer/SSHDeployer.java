@@ -11,8 +11,6 @@ public class SSHDeployer implements Deployer {
 
     public static final String TARGET_SYSTEM_FILE_SEPARATOR = "/";
 
-    private Log logger = Logger.get();
-
     private final SSHClient ssh;
     private final String targetPath;
     private final String targetFileMode;
@@ -27,6 +25,9 @@ public class SSHDeployer implements Deployer {
     }
 
     public boolean put(String localRepoPath, String repoArtifactPath) throws IOException {
+
+        Log logger = Logger.get();
+
         String localFile = new File(localRepoPath, repoArtifactPath).getAbsolutePath();
         String targetFile = targetPath + TARGET_SYSTEM_FILE_SEPARATOR + repoArtifactPath;
         String targetFolder = targetFile.substring(0, targetFile.lastIndexOf('/'));
@@ -37,15 +38,17 @@ public class SSHDeployer implements Deployer {
         } else {
             ssh.mkdir(targetFolder);
             doPut(localFile, targetFolder, targetFileMode);
-            if (!md5Checker.existsAndMatch(targetFile, localFile, ssh)) {
-                throw new RuntimeException("remote file corrupted");
+            if (md5Checker.existsAndMatch(targetFile, localFile, ssh)) {
+                return true;
+            } else {
+                logger.info("remote file corrupted: " + targetFile);
+                return false;
             }
-            return true;
         }
     }
 
     private void doPut(String localFile, String targetPath, String mode) throws IOException {
-        logger.info("copying file from [" + localFile + "] to [" + targetPath + "], mode=" + mode);
+        Logger.get().info("copying file from [" + localFile + "] to [" + targetPath + "], mode=" + mode);
         ssh.scp(localFile, targetPath, mode);
     }
 }

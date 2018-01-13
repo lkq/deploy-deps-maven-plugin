@@ -8,8 +8,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
@@ -41,14 +40,9 @@ public class SSHDeployerTest {
     public void willThrowExceptionIfDifferentMD5AfterPut() throws Exception {
         given(md5Checker.existsAndMatch("/remote/com/github/lkq/some-file", "/local/com/github/lkq/some-file", ssh)).willReturn(false).willReturn(false);
 
-        String reason = null;
-        try {
-            deployer.put("/local", "com/github/lkq/some-file");
-        } catch (Exception e) {
-            reason = e.getMessage();
-        }
+        boolean putted = deployer.put("/local", "com/github/lkq/some-file");
 
-        assertThat(reason, is("remote file corrupted"));
+        assertFalse(putted);
         verify(ssh, times(1)).scp("/local/com/github/lkq/some-file", "/remote/com/github/lkq", "0740");
     }
 

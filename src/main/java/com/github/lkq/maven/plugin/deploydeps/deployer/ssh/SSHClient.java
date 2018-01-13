@@ -5,14 +5,12 @@ import ch.ethz.ssh2.SCPClient;
 import ch.ethz.ssh2.Session;
 import com.github.lkq.maven.plugin.deploydeps.logging.Logger;
 import org.apache.commons.io.IOUtils;
-import org.apache.maven.plugin.logging.Log;
 
 import java.io.IOException;
 
 public class SSHClient {
     private final Connection connection;
     private final SCPClient scp;
-    private Log logger = Logger.get();
 
     public SSHClient(Connection connection) throws IOException {
         this.connection = connection;
@@ -30,7 +28,7 @@ public class SSHClient {
             session.execCommand(cmd);
             return ExecResult.success(IOUtils.toString(session.getStdout(), "UTF-8"), IOUtils.toString(session.getStderr(), "UTF-8"));
         } catch (IOException e) {
-            logger.debug("failed to execute command " + cmd, e);
+            Logger.get().debug("failed to execute command " + cmd, e);
             return ExecResult.fail();
         } finally {
             if (session != null) {
@@ -45,7 +43,7 @@ public class SSHClient {
         if (error == null || "".equals(error.trim())) {
             return true;
         } else {
-            logger.info("failed to create remote dir, error=" + error + ", path=" + path);
+            Logger.get().info("failed to create remote dir, error=" + error + ", path=" + path);
             return false;
         }
     }
