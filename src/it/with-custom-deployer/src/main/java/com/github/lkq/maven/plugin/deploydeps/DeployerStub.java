@@ -5,7 +5,8 @@ public class DeployerStub {
         System.out.println("created DeployerStub");
     }
 
-    public void put(String localRepo, String repoArtifactPath) {
+    public boolean put(String localRepo, String repoArtifactPath) {
         System.out.println("stubbed put, localRepo=" + localRepo + " repoArtifactPath=" + repoArtifactPath);
+        return true;
     }
 }

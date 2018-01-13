@@ -10,7 +10,8 @@ public class DeployerStub {
         System.out.println("created DeployerStub, user=" + user + " host=" + host);
     }
 
-    public void put(String localRepoPath, String repoArtifactPath) {
+    public boolean put(String localRepoPath, String repoArtifactPath) {
         System.out.println("stub deployer user=" + user + " host=" + host + ", from [" + localRepoPath + "] to [" + repoArtifactPath);
+        return true;
     }
 }

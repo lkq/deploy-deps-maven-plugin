@@ -11,9 +11,10 @@ public class DummyDeployer {
         this.host = host;
     }
 
-    public void put(String localRepoPath, String repoArtifactPath) {
+    public boolean put(String localRepoPath, String repoArtifactPath) {
 
         this.localRepoPath = localRepoPath;
         this.repoArtifactPath = repoArtifactPath;
+        return true;
     }
 }

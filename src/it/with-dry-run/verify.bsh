@@ -8,10 +8,10 @@ try
     File file = new File( basedir, "build.log" );
     String buf = FileUtils.fileRead( file );
 
-    Pattern stubPattern = Pattern.compile("dry run, deploying");
+    Pattern stubPattern = Pattern.compile("dry run mode");
     Matcher stubMatcher = stubPattern.matcher( buf );
     if ( !stubMatcher.find() ) {
-        System.out.println( "failed to call deployer stub" );
+        System.out.println( "failed to run in dry run mode" );
         return false;
     }
 

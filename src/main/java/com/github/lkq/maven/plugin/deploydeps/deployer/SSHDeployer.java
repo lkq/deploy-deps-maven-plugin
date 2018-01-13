@@ -23,26 +23,24 @@ public class SSHDeployer implements Deployer {
         this.ssh = ssh;
         this.targetPath = targetPath;
         this.md5Checker = md5Checker;
-        if (targetFileMode == null || "".equals(targetFileMode.trim())) {
-            this.targetFileMode = "640";
-        } else {
-            this.targetFileMode = targetFileMode;
-        }
+        this.targetFileMode = targetFileMode;
     }
 
-    public void put(String localRepoPath, String repoArtifactPath) throws IOException {
+    public boolean put(String localRepoPath, String repoArtifactPath) throws IOException {
         String localFile = new File(localRepoPath, repoArtifactPath).getAbsolutePath();
         String targetFile = targetPath + TARGET_SYSTEM_FILE_SEPARATOR + repoArtifactPath;
         String targetFolder = targetFile.substring(0, targetFile.lastIndexOf('/'));
 
         if (md5Checker.existsAndMatch(targetFile, localFile, ssh)) {
-            logger.info("file already exists with same md5 checksum: " + targetFile);
+            logger.debug("file skipped: " + targetFile);
+            return false;
         } else {
             ssh.mkdir(targetFolder);
             doPut(localFile, targetFolder, targetFileMode);
             if (!md5Checker.existsAndMatch(targetFile, localFile, ssh)) {
                 throw new RuntimeException("remote file corrupted");
             }
+            return true;
         }
     }
 

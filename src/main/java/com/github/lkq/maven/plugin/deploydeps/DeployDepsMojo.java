@@ -4,6 +4,7 @@ import com.github.lkq.maven.plugin.deploydeps.artifact.ArtifactCollector;
 import com.github.lkq.maven.plugin.deploydeps.deployer.CompositeDeployer;
 import com.github.lkq.maven.plugin.deploydeps.deployer.Deployer;
 import com.github.lkq.maven.plugin.deploydeps.deployer.DeployerFactory;
+import com.github.lkq.maven.plugin.deploydeps.report.Reporter;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
@@ -19,8 +20,8 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Mojo(name = "deploy-deps", requiresDependencyResolution = ResolutionScope.RUNTIME)
@@ -61,7 +62,6 @@ public class DeployDepsMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
 
         Log logger = getLog();
-        logInfo(logger);
 
         try {
             configProcessor.process(deployers);
@@ -75,16 +75,17 @@ public class DeployDepsMojo extends AbstractMojo {
             }
         }
 
-        Deployer artifactDeployer;
+        CompositeDeployer artifactDeployer;
+        Reporter reporter = new Reporter();
         if (dryRun) {
-            // requires maven-plugin-plugin:3.5, otherwise can not use lambda
-            artifactDeployer = (localRepo, artifactPath) -> logger.info("dry run, deploying " + artifactPath);
+            logger.info("dry run mode");
+            artifactDeployer = new CompositeDeployer(Collections.EMPTY_LIST, reporter);
         } else {
             List<Deployer> deployers = new ArrayList<>();
             try {
                 deployers.addAll(deployerFactory.create(this.deployers));
                 deployers.addAll(deployerFactory.create(this.customDeployers, project.getBuild().getOutputDirectory()));
-                artifactDeployer = new CompositeDeployer(deployers);
+                artifactDeployer = new CompositeDeployer(deployers, reporter);
             } catch (Throwable e) {
                 throw new MojoExecutionException("failed to create deployer", e);
             }
@@ -101,24 +102,13 @@ public class DeployDepsMojo extends AbstractMojo {
         List<Artifact> artifacts = artifactCollector.collect(project.getDependencies());
         for (Artifact artifact : artifacts) {
             String repoArtifactPath = localRepository.pathOf(artifact);
-            try {
-                artifactDeployer.put(localRepository.getBasedir(), repoArtifactPath);
-            } catch (IOException e) {
-                logger.error("failed to deploy");
-            }
+            artifactDeployer.put(localRepository.getBasedir(), repoArtifactPath);
+        }
+
+        reporter.print(logger);
+
+        if (reporter.getFailSum() > 0) {
+            throw new MojoExecutionException("one or more dependencies failed to deploy");
         }
     }
-
-    private void logInfo(Log logger) {
-
-        logger.debug("project: " + project);
-        logger.info("localRepository: " + localRepository);
-        logger.info("remoteArtifactRepositories: " + remoteArtifactRepositories);
-
-        logger.info("artifacts to deploy: " + project.getDependencyArtifacts());
-
-        logger.info("dry run:  " + dryRun);
-
-    }
-
 }
