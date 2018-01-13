@@ -78,7 +78,7 @@ public class DeployDepsMojo extends AbstractMojo {
         Deployer artifactDeployer;
         if (dryRun) {
             // requires maven-plugin-plugin:3.5, otherwise can not use lambda
-            artifactDeployer = (localFile, artifactPath) -> logger.info("dry run, deploying " + localFile);
+            artifactDeployer = (localRepo, artifactPath) -> logger.info("dry run, deploying " + artifactPath);
         } else {
             List<Deployer> deployers = new ArrayList<>();
             try {

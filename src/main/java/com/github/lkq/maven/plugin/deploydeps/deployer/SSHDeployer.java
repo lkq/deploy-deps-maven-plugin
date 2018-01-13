@@ -45,7 +45,8 @@ public class SSHDeployer implements Deployer {
                 if (!localMD5.equals(remoteMD5)) {
                     doPut(localFile, targetFolder, targetFileMode);
                 } else {
-                    logger.info("file already exists, skipping... " + targetFile);
+                    logger.info("file already exists, will not re-deploy" + targetFile);
+
                 }
             }
         }
