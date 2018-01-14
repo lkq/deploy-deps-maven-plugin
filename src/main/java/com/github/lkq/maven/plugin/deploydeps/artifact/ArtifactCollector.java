@@ -3,6 +3,7 @@ package com.github.lkq.maven.plugin.deploydeps.artifact;
 import com.github.lkq.maven.plugin.deploydeps.logging.Logger;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.metadata.ArtifactMetadataRetrievalException;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
@@ -38,43 +39,42 @@ public class ArtifactCollector {
         this.remoteArtifactRepositories = remoteArtifactRepositories;
     }
 
-    public List<Artifact> collect(List<Dependency> dependencies) {
+    public List<Artifact> collect(Dependency dependency) {
 
         Log logger = Logger.get();
         ArrayList<Artifact> artifacts = new ArrayList<>();
 
-        for (Dependency dependency : dependencies) {
-            VersionRange versionRange;
-            try {
-                versionRange = VersionRange.createFromVersionSpec(dependency.getVersion());
-            } catch (InvalidVersionSpecificationException e) {
-                String error = "invalid version spec: " + dependency.getVersion();
-                logger.error(error, e);
-                throw new RuntimeException(error, e);
-            }
-            Artifact dependencyArtifact = artifactFactory.createDependencyArtifact(dependency.getGroupId(), dependency.getArtifactId(), versionRange, dependency.getType(), dependency.getClassifier(), dependency.getScope());
-            try {
-                List<ArtifactVersion> availableVersions = artifactMetadataSource.retrieveAvailableVersions(dependencyArtifact, localRepository, remoteArtifactRepositories);
-                logger.info(" available versions: " + dependencyArtifact.getArtifactId() + " " + availableVersions);
-                for (ArtifactVersion version : availableVersions) {
-                    if (versionRange.containsVersion(version)) {
+        VersionRange versionRange;
+        try {
+            versionRange = VersionRange.createFromVersionSpec(dependency.getVersion());
+        } catch (InvalidVersionSpecificationException e) {
+            String error = "invalid version spec: " + dependency.getVersion();
+            logger.error(error, e);
+            throw new RuntimeException(error, e);
+        }
+        Artifact dependencyArtifact = artifactFactory.createDependencyArtifact(dependency.getGroupId(), dependency.getArtifactId(), versionRange, dependency.getType(), dependency.getClassifier(), dependency.getScope());
+        List<ArtifactVersion> availableVersions = null;
+        try {
+            availableVersions = artifactMetadataSource.retrieveAvailableVersions(dependencyArtifact, localRepository, remoteArtifactRepositories);
+        } catch (ArtifactMetadataRetrievalException e) {
+            throw new RuntimeException("failed to get artifact versions", e);
+        }
+        logger.info("artifact " + dependencyArtifact.getGroupId() + ":" + dependencyArtifact.getArtifactId() + " available versions: " + availableVersions);
+        for (ArtifactVersion version : availableVersions) {
+            if (versionRange.containsVersion(version)) {
 
-                        Artifact artifact = artifactFactory.createArtifactWithClassifier(dependency.getGroupId(), dependency.getArtifactId(), version.toString(), dependency.getType(), dependency.getClassifier());
-                        try {
-                            artifactResolver.resolve(artifact, remoteArtifactRepositories, localRepository);
-                        } catch (ArtifactResolutionException e) {
-                            logger.info("failed to resolve artifact:" + artifact, e);
-                        } catch (ArtifactNotFoundException e) {
-                            logger.info("artifact not found: " + artifact, e);
-                        }
-                        artifacts.add(artifact);
-                    }
+                Artifact artifact = artifactFactory.createArtifactWithClassifier(dependency.getGroupId(), dependency.getArtifactId(), version.toString(), dependency.getType(), dependency.getClassifier());
+                try {
+                    artifactResolver.resolve(artifact, remoteArtifactRepositories, localRepository);
+                } catch (ArtifactResolutionException e) {
+                    logger.warn("failed to resolve artifact:" + artifact, e);
+                } catch (ArtifactNotFoundException e) {
+                    logger.warn("artifact not found: " + artifact, e);
                 }
-
-            } catch (Exception e) {
-                logger.error("failed to deploy dependencies", e);
+                artifacts.add(artifact);
             }
         }
+
         return artifacts;
     }
 }

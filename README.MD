@@ -107,7 +107,7 @@ you can use your preferred deploy mechanism, such as ftp by specifying a customD
 
 your deployer class have to provide below method signature
 
-    void put(String localRepoPath, String repoArtifactPath)
+    boolean put(String localRepoPath, String repoArtifactPath)
 
 where the localRepoPath is the your local maven repository base dir
 
