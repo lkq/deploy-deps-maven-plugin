@@ -6,11 +6,6 @@ import com.github.lkq.maven.plugin.deploydeps.deployer.Deployer;
 import com.github.lkq.maven.plugin.deploydeps.deployer.DeployerFactory;
 import com.github.lkq.maven.plugin.deploydeps.logging.Logger;
 import com.github.lkq.maven.plugin.deploydeps.report.Reporter;
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -21,6 +16,11 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.repository.LocalRepositoryManager;
+import org.eclipse.aether.repository.RemoteRepository;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,18 +40,15 @@ public class DeployDepsMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
-    @Parameter(defaultValue = "${localRepository}", readonly = true)
-    private ArtifactRepository localRepository;
-    @Parameter(defaultValue = "${project.remoteArtifactRepositories}", readonly = true)
-    private List remoteArtifactRepositories;
 
+    @Component()
+    private RepositorySystem repoSystem;
 
-    @Component
-    private ArtifactFactory artifactFactory;
-    @Component
-    private ArtifactMetadataSource artifactMetadataSource;
-    @Component
-    private ArtifactResolver artifactResolver;
+    @Parameter(defaultValue = "${repositorySystemSession}")
+    private RepositorySystemSession repoSession;
+
+    @Parameter(defaultValue = "${project.remoteProjectRepositories}")
+    private List<RemoteRepository> remoteRepos;
 
     private final DeployerFactory deployerFactory;
     private final DefaultConfigProcessor configProcessor;
@@ -97,20 +94,22 @@ public class DeployDepsMojo extends AbstractMojo {
             }
         }
 
-        ArtifactCollector artifactCollector = new ArtifactCollector(artifactFactory,
-                artifactMetadataSource,
-                artifactResolver,
-                localRepository,
-                remoteArtifactRepositories);
+        logger.info("repoSystem " + repoSystem);
+        logger.info("repoSession " + repoSession);
+        logger.info("remoteRepos " + remoteRepos);
 
+        ArtifactCollector artifactCollector = new ArtifactCollector(repoSystem, repoSession, remoteRepos);
 
         List<Dependency> dependencies = project.getDependencies();
+        LocalRepositoryManager localRepositoryManager = repoSession.getLocalRepositoryManager();
+        String baseDir = localRepositoryManager.getRepository().getBasedir().getAbsolutePath();
+
         for (Dependency dependency : dependencies) {
             try {
                 List<Artifact> artifacts = artifactCollector.collect(dependency);
                 for (Artifact artifact : artifacts) {
-                    String repoArtifactPath = localRepository.pathOf(artifact);
-                    artifactDeployer.put(localRepository.getBasedir(), repoArtifactPath);
+                    String repoArtifactPath = localRepositoryManager.getPathForLocalArtifact(artifact);
+                    artifactDeployer.put(baseDir, repoArtifactPath);
                 }
             } catch (Exception e) {
                 reporter.reportFail(dependency.getArtifactId());

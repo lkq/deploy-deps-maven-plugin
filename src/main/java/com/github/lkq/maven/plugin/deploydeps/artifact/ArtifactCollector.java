@@ -1,80 +1,57 @@
 package com.github.lkq.maven.plugin.deploydeps.artifact;
 
 import com.github.lkq.maven.plugin.deploydeps.logging.Logger;
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataRetrievalException;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
-import org.apache.maven.artifact.resolver.ArtifactResolutionException;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
-import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
-import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.logging.Log;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.*;
+import org.eclipse.aether.version.Version;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ArtifactCollector {
+    private final RepositorySystem repoSystem;
+    private final RepositorySystemSession repoSession;
+    private final List<RemoteRepository> remoteRepos;
 
-    private ArtifactFactory artifactFactory;
-    private ArtifactMetadataSource artifactMetadataSource;
-    private ArtifactResolver artifactResolver;
-    private final ArtifactRepository localRepository;
-    private final List remoteArtifactRepositories;
+    public ArtifactCollector(RepositorySystem repoSystem, RepositorySystemSession repoSession, List<RemoteRepository> remoteRepos) {
 
-    public ArtifactCollector(ArtifactFactory artifactFactory,
-                             ArtifactMetadataSource artifactMetadataSource,
-                             ArtifactResolver artifactResolver,
-                             ArtifactRepository localRepository,
-                             List remoteArtifactRepositories) {
-
-        this.artifactFactory = artifactFactory;
-        this.artifactMetadataSource = artifactMetadataSource;
-        this.artifactResolver = artifactResolver;
-        this.localRepository = localRepository;
-        this.remoteArtifactRepositories = remoteArtifactRepositories;
+        this.repoSystem = repoSystem;
+        this.repoSession = repoSession;
+        this.remoteRepos = remoteRepos;
     }
 
     public List<Artifact> collect(Dependency dependency) {
 
         Log logger = Logger.get();
-        ArrayList<Artifact> artifacts = new ArrayList<>();
 
-        VersionRange versionRange;
-        try {
-            versionRange = VersionRange.createFromVersionSpec(dependency.getVersion());
-        } catch (InvalidVersionSpecificationException e) {
-            String error = "invalid version spec: " + dependency.getVersion();
-            logger.error(error, e);
-            throw new RuntimeException(error, e);
-        }
-        Artifact dependencyArtifact = artifactFactory.createDependencyArtifact(dependency.getGroupId(), dependency.getArtifactId(), versionRange, dependency.getType(), dependency.getClassifier(), dependency.getScope());
-        List<ArtifactVersion> availableVersions = null;
-        try {
-            availableVersions = artifactMetadataSource.retrieveAvailableVersions(dependencyArtifact, localRepository, remoteArtifactRepositories);
-        } catch (ArtifactMetadataRetrievalException e) {
-            throw new RuntimeException("failed to get artifact versions", e);
-        }
-        logger.info("artifact " + dependencyArtifact.getGroupId() + ":" + dependencyArtifact.getArtifactId() + " available versions: " + availableVersions);
-        for (ArtifactVersion version : availableVersions) {
-            if (versionRange.containsVersion(version)) {
+        List<Artifact> artifacts = new ArrayList<>();
 
-                Artifact artifact = artifactFactory.createArtifactWithClassifier(dependency.getGroupId(), dependency.getArtifactId(), version.toString(), dependency.getType(), dependency.getClassifier());
+        Artifact artifact = new DefaultArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getClassifier(), dependency.getType(), dependency.getVersion());
+        VersionRangeRequest request = new VersionRangeRequest(artifact, remoteRepos, null);
+        try {
+            VersionRangeResult versionRangeResult = repoSystem.resolveVersionRange(repoSession, request);
+            List<Version> versions = versionRangeResult.getVersions();
+            logger.info(artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion() + " available versions: " + versions);
+
+            for (Version version : versions) {
                 try {
-                    artifactResolver.resolve(artifact, remoteArtifactRepositories, localRepository);
+                    ArtifactRequest artifactRequest = new ArtifactRequest(new DefaultArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getClassifier(), dependency.getType(), version.toString()), remoteRepos, null);
+                    ArtifactResult artifactResult = repoSystem.resolveArtifact(repoSession, artifactRequest);
+                    artifacts.add(artifactResult.getArtifact());
                 } catch (ArtifactResolutionException e) {
-                    logger.warn("failed to resolve artifact:" + artifact, e);
-                } catch (ArtifactNotFoundException e) {
-                    logger.warn("artifact not found: " + artifact, e);
+                    logger.error("failed to resolve artifact", e);
                 }
-                artifacts.add(artifact);
             }
-        }
 
+        } catch (VersionRangeResolutionException e) {
+            logger.error("failed to resolve version range", e);
+        }
         return artifacts;
     }
 }

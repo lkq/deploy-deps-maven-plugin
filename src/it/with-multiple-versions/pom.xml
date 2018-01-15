@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.lkq</groupId>
-    <artifactId>with-custom-deployer</artifactId>
+    <artifactId>with-multiple-versions</artifactId>
     <version>0.1.0-SNAPSHOT</version>
 
     <dependencies>
@@ -13,6 +13,11 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>[4.10,)</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.22</version>
         </dependency>
     </dependencies>
 
