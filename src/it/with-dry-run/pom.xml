@@ -44,22 +44,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>dry-run</id>
-            <build>
-                <defaultGoal>install</defaultGoal>
-                <plugins>
-                    <plugin>
-                        <groupId>com.github.lkq</groupId>
-                        <artifactId>deploy-deps-maven-plugin</artifactId>
-                        <configuration>
-                            <dryRun>true</dryRun>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
