@@ -105,7 +105,7 @@ you can use your preferred deploy mechanism, such as ftp by specifying a customD
         </constructorArgs>
     </customDeployers>
 
-your deployer class have to provide below method signature
+your deployer class have to implement below method signature, in order to make the plugin load your deployer class, the plugin need to be execute after compile phase
 
     boolean put(String localRepoPath, String repoArtifactPath)
 
