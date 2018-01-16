@@ -14,10 +14,8 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MD5CheckerTest {
@@ -50,13 +48,12 @@ public class MD5CheckerTest {
         SSHClient.ExecResult md5Res = SSHClient.ExecResult.success(localFileMD5 +" /remote/com/github/lkq/some-file", "");
         given(ssh.execute("md5sum /remote/com/github/lkq/some-file")).willReturn(md5Res);
 
-        checker.existsAndMatch("/remote/com/github/lkq/some-file", localFile, ssh);
+        assertTrue(checker.existsAndMatch("/remote/com/github/lkq/some-file", localFile, ssh));
 
-        verify(ssh, never()).scp(anyString(), anyString(), anyString());
     }
 
     @Test
-    public void willOverwriteIfFileExistWithDifferentMD5() throws Exception {
+    public void willReturnFalseIfFileExistWithDifferentMD5() throws Exception {
 
         URL localFileURL = this.getClass().getClassLoader().getResource("com/github/lkq/some-file");
         String localFile = localFileURL.getPath();
@@ -64,7 +61,7 @@ public class MD5CheckerTest {
         SSHClient.ExecResult md5Res = SSHClient.ExecResult.success("abcde12345 /remote/com/github/lkq/some-file", "");
         given(ssh.execute("md5sum /remote/com/github/lkq/some-file")).willReturn(md5Res);
 
-        checker.existsAndMatch("/remote/com/github/lkq/some-file", localFile, ssh);
+        assertFalse(checker.existsAndMatch("/remote/com/github/lkq/some-file", localFile, ssh));
 
     }
 }

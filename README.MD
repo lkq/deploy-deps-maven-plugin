@@ -24,7 +24,7 @@ If you want to deploy your artifacts to remote hosts, there are already a bunch 
 -- can be run in CI server, e.g Jenkins\
 
 
-## How to Use
+## Usage
 
 
 create a pom.xml file as below, with the artifacts you want to deploy in the \<dependencies\> tag
@@ -113,6 +113,10 @@ where the localRepoPath is the your local maven repository base dir
 
 the repoArtifactPath is your artifact relative path in the repository
 
+
+## Compatibility
+
+requires maven 3.3.9 or above
 
 ## Build
 run integration tests

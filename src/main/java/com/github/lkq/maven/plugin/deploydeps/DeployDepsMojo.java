@@ -94,10 +94,6 @@ public class DeployDepsMojo extends AbstractMojo {
             }
         }
 
-        logger.info("repoSystem " + repoSystem);
-        logger.info("repoSession " + repoSession);
-        logger.info("remoteRepos " + remoteRepos);
-
         ArtifactCollector artifactCollector = new ArtifactCollector(repoSystem, repoSession, remoteRepos);
 
         List<Dependency> dependencies = project.getDependencies();
@@ -107,18 +103,23 @@ public class DeployDepsMojo extends AbstractMojo {
         for (Dependency dependency : dependencies) {
             try {
                 List<Artifact> artifacts = artifactCollector.collect(dependency);
-                for (Artifact artifact : artifacts) {
-                    String repoArtifactPath = localRepositoryManager.getPathForLocalArtifact(artifact);
-                    artifactDeployer.put(baseDir, repoArtifactPath);
+                if (artifacts.size() > 0) {
+                    for (Artifact artifact : artifacts) {
+                        String repoArtifactPath = localRepositoryManager.getPathForLocalArtifact(artifact);
+                        artifactDeployer.put(baseDir, repoArtifactPath);
+                    }
+                } else {
+                    reporter.reportFail(dependency.getArtifactId());
                 }
             } catch (Exception e) {
+                logger.error("error when deploying: " + dependency.getArtifactId(), e);
                 reporter.reportFail(dependency.getArtifactId());
             }
         }
 
         reporter.print(logger);
 
-        if (reporter.getFailSum() > 0) {
+        if (reporter.totalFails() > 0) {
             throw new MojoExecutionException("one or more dependencies failed to deploy");
         }
     }

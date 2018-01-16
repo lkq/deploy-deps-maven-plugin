@@ -22,7 +22,7 @@ public class Reporter {
         skipCounts.merge(repoArtifactPath, 1, (a, b) -> a + b);
     }
 
-    public int getFailSum() {
+    public int totalFails() {
         return sumCount(failCounts);
     }
 

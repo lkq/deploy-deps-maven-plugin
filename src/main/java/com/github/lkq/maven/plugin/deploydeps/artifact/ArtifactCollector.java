@@ -26,7 +26,7 @@ public class ArtifactCollector {
         this.remoteRepos = remoteRepos;
     }
 
-    public List<Artifact> collect(Dependency dependency) {
+    public List<Artifact> collect(Dependency dependency) throws VersionRangeResolutionException {
 
         Log logger = Logger.get();
 
@@ -34,23 +34,18 @@ public class ArtifactCollector {
 
         Artifact artifact = new DefaultArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getClassifier(), dependency.getType(), dependency.getVersion());
         VersionRangeRequest request = new VersionRangeRequest(artifact, remoteRepos, null);
-        try {
-            VersionRangeResult versionRangeResult = repoSystem.resolveVersionRange(repoSession, request);
-            List<Version> versions = versionRangeResult.getVersions();
-            logger.info(artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion() + " available versions: " + versions);
+        VersionRangeResult versionRangeResult = repoSystem.resolveVersionRange(repoSession, request);
+        List<Version> versions = versionRangeResult.getVersions();
+        logger.info(artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion() + " available versions: " + versions);
 
-            for (Version version : versions) {
-                try {
-                    ArtifactRequest artifactRequest = new ArtifactRequest(new DefaultArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getClassifier(), dependency.getType(), version.toString()), remoteRepos, null);
-                    ArtifactResult artifactResult = repoSystem.resolveArtifact(repoSession, artifactRequest);
-                    artifacts.add(artifactResult.getArtifact());
-                } catch (ArtifactResolutionException e) {
-                    logger.error("failed to resolve artifact", e);
-                }
+        for (Version version : versions) {
+            try {
+                ArtifactRequest artifactRequest = new ArtifactRequest(new DefaultArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getClassifier(), dependency.getType(), version.toString()), remoteRepos, null);
+                ArtifactResult artifactResult = repoSystem.resolveArtifact(repoSession, artifactRequest);
+                artifacts.add(artifactResult.getArtifact());
+            } catch (ArtifactResolutionException e) {
+                logger.error("failed to resolve artifact", e);
             }
-
-        } catch (VersionRangeResolutionException e) {
-            logger.error("failed to resolve version range", e);
         }
         return artifacts;
     }
