@@ -114,6 +114,11 @@ where the localRepoPath is the your local maven repository base dir
 the repoArtifactPath is your artifact relative path in the repository
 
 
+### Dry Run
+use dry-run to verify the pom without actual deploying
+
+    mvn deploy-deps:dry-run
+
 ## Compatibility
 
 requires maven 3.3.9 or above
