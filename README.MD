@@ -121,7 +121,7 @@ use dry-run to verify the pom without actual deploying
 
 ## Compatibility
 
-requires maven 3.3.9 or above
+requires maven 3.5.2 or above
 
 ## Build
 run integration tests
