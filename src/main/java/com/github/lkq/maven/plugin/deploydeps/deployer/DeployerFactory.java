@@ -45,13 +45,18 @@ public class DeployerFactory {
 
     private Deployer createSSHDeployer(DefaultConfig config) {
         try {
+            File pemFile = new File(config.getKeyFile());
+            checkFileExistsAndReadable(pemFile);
+
             String password = "";
             if (config.getPasswordFile() != null && !"".equals(config.getPasswordFile().trim())) {
-                password = FileUtils.readFileToString(new File(config.getPasswordFile()), "UTF-8");
+                File pwdFile = new File(config.getPasswordFile());
+                checkFileExistsAndReadable(pwdFile);
+                password = FileUtils.readFileToString(pwdFile, "UTF-8");
             }
             Connection connection = new Connection(config.getHost(), Integer.valueOf(config.getPort()));
             connection.connect();
-            boolean connected = connection.authenticateWithPublicKey(config.getUser(), new File(config.getKeyFile()), password);
+            boolean connected = connection.authenticateWithPublicKey(config.getUser(), pemFile, password);
             if (connected) {
                 return new SSHDeployer(new SSHClient(connection), config.getTargetPath(), config.getTargetFileMode(), new MD5Checker());
             } else {
@@ -59,6 +64,14 @@ public class DeployerFactory {
             }
         } catch (IOException e) {
             throw new RuntimeException("failed to establish connection:" + config);
+        }
+    }
+
+    private void checkFileExistsAndReadable(File pemFile) {
+        if (!pemFile.exists() && !pemFile.canRead()) {
+            String errorMsg = "file not exists or not readable: " + pemFile.getAbsolutePath();
+            Logger.get().error(errorMsg);
+            throw new RuntimeException(errorMsg);
         }
     }
 
