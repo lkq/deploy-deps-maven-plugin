@@ -26,6 +26,9 @@ If you want to deploy your artifacts to remote hosts, there are already a bunch 
 
 ## Usage
 
+available in central repo
+
+https://repo1.maven.org/maven2/com/github/lkq/deploy-deps-maven-plugin/
 
 create a pom.xml file as below, with the artifacts you want to deploy in the \<dependencies\> tag
 
